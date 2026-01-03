@@ -1,0 +1,23 @@
+{
+  "name": "create-order",
+  "version": "1.0.0",
+  "description": "创建订单云函数，处理用户支付订单创建",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  },
+  "author": "FoodAI Team",
+  "license": "MIT",
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 20,
+    "runtime": "Nodejs16",
+    "envVariables": {
+      "WECHAT_PAY_MCH_ID": "",
+      "WECHAT_PAY_API_KEY": ""
+    }
+  }
+}

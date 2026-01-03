@@ -1,0 +1,312 @@
+<!-- pages/recipe/recipe.wxml -->
+<view class="recipe-page">
+  <!-- 导航栏 -->
+  <view class="navbar">
+    <view class="navbar-content">
+      <van-icon name="arrow-left" size="20" color="#333" bindtap="goBack" />
+      <text class="navbar-title">个性化食谱</text>
+      <view class="navbar-right">
+        <van-icon name="star-o" size="20" color="#333" bindtap="viewFavorites" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 主要内容 -->
+  <scroll-view class="main-content" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 生成新食谱区域 -->
+    <view class="generate-section" wx:if="{{!currentRecipe}}">
+      <view class="section-header">
+        <van-icon name="flower-o" size="24" color="#07c160" />
+        <text class="section-title">生成个性化食谱</text>
+      </view>
+      
+      <view class="input-card">
+        <view class="input-group">
+          <text class="input-label">今日已摄入</text>
+          <input 
+            class="food-input"
+            placeholder="例如：早餐：牛奶+面包，午餐：米饭+鸡肉"
+            value="{{foodInput}}"
+            bindinput="onFoodInput"
+          />
+        </view>
+        
+        <view class="input-group">
+          <text class="input-label">饮食目标</text>
+          <view class="goal-buttons">
+            <van-button 
+              wx:for="{{goals}}" 
+              wx:key="id"
+              type="{{selectedGoal === item.id ? 'primary' : 'default'}}"
+              size="small"
+              round
+              bindtap="selectGoal"
+              data-id="{{item.id}}"
+            >
+              {{item.name}}
+            </van-button>
+          </view>
+        </view>
+        
+        <view class="input-group">
+          <text class="input-label">饮食偏好</text>
+          <view class="preference-buttons">
+            <van-button 
+              wx:for="{{preferences}}" 
+              wx:key="id"
+              type="{{selectedPreference === item.id ? 'primary' : 'default'}}"
+              size="small"
+              round
+              bindtap="selectPreference"
+              data-id="{{item.id}}"
+            >
+              {{item.name}}
+            </van-button>
+          </view>
+        </view>
+        
+        <van-button 
+          type="primary" 
+          size="large" 
+          round
+          block
+          bindtap="generateRecipe"
+          loading="{{isGenerating}}"
+          disabled="{{!canGenerate}}"
+        >
+          <van-icon name="magic" size="20" />
+          生成食谱
+        </van-button>
+      </view>
+      
+      <!-- 历史食谱 -->
+      <view class="history-section" wx:if="{{recipeHistory.length > 0}}">
+        <view class="section-header">
+          <van-icon name="clock-o" size="24" color="#1989fa" />
+          <text class="section-title">历史食谱</text>
+        </view>
+        
+        <view class="history-list">
+          <view 
+            class="history-item" 
+            wx:for="{{recipeHistory}}" 
+            wx:key="id"
+            bindtap="viewRecipe"
+            data-index="{{index}}"
+          >
+            <view class="history-item-content">
+              <text class="recipe-name">{{item.dinner.name}}</text>
+              <text class="recipe-info">
+                {{item.dinner.cookingTime}} · {{item.dinner.difficulty}}
+              </text>
+              <view class="recipe-tags">
+                <van-tag 
+                  wx:for="{{item.tags || []}}" 
+                  wx:key="*this"
+                  type="primary" 
+                  size="small"
+                >
+                  {{item}}
+                </van-tag>
+              </view>
+            </view>
+            <van-icon name="arrow" size="16" color="#999" />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 食谱详情 -->
+    <view class="recipe-detail" wx:if="{{currentRecipe}}">
+      <!-- 食谱头部 -->
+      <view class="recipe-header">
+        <view class="recipe-title-section">
+          <text class="recipe-title">{{currentRecipe.dinner.name}}</text>
+          <text class="recipe-description">{{currentRecipe.dinner.description}}</text>
+        </view>
+        
+        <view class="recipe-meta">
+          <view class="meta-item">
+            <van-icon name="clock-o" size="16" color="#666" />
+            <text>{{currentRecipe.dinner.cookingTime}}</text>
+          </view>
+          <view class="meta-item">
+            <van-icon name="fire-o" size="16" color="#666" />
+            <text>{{currentRecipe.nutrition.calories}}</text>
+          </view>
+          <view class="meta-item">
+            <van-icon name="label-o" size="16" color="#666" />
+            <text>{{currentRecipe.dinner.difficulty}}</text>
+          </view>
+        </view>
+        
+        <view class="recipe-actions">
+          <van-button 
+            type="primary" 
+            size="small" 
+            round
+            bindtap="saveRecipe"
+          >
+            <van-icon name="like-o" size="16" />
+            保存食谱
+          </van-button>
+          <van-button 
+            type="default" 
+            size="small" 
+            round
+            bindtap="markAsCooked"
+          >
+            <van-icon name="success" size="16" />
+            标记已做
+          </van-button>
+          <van-button 
+            type="default" 
+            size="small" 
+            round
+            bindtap="shareRecipe"
+          >
+            <van-icon name="share-o" size="16" />
+            分享
+          </van-button>
+        </view>
+      </view>
+
+      <!-- 食材清单 -->
+      <view class="section-card">
+        <view class="section-header">
+          <van-icon name="shopping-cart-o" size="20" color="#07c160" />
+          <text class="section-title">食材清单</text>
+        </view>
+        
+        <van-cell-group>
+          <van-cell 
+            wx:for="{{currentRecipe.dinner.ingredients}}" 
+            wx:key="index"
+            title="{{item.name}}"
+            value="{{item.amount}}{{item.unit}}"
+          />
+        </van-cell-group>
+      </view>
+
+      <!-- 烹饪步骤 -->
+      <view class="section-card">
+        <view class="section-header">
+          <van-icon name="orders-o" size="20" color="#1989fa" />
+          <text class="section-title">烹饪步骤</text>
+        </view>
+        
+        <view class="steps-list">
+          <view 
+            class="step-item" 
+            wx:for="{{currentRecipe.dinner.steps}}" 
+            wx:key="index"
+          >
+            <view class="step-number">{{index + 1}}</view>
+            <text class="step-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 营养信息 -->
+      <view class="section-card">
+        <view class="section-header">
+          <van-icon name="chart-trending-o" size="20" color="#ff976a" />
+          <text class="section-title">营养信息</text>
+        </view>
+        
+        <view class="nutrition-grid">
+          <view class="nutrition-item">
+            <text class="nutrition-value">{{currentRecipe.nutrition.calories}}</text>
+            <text class="nutrition-label">热量</text>
+          </view>
+          <view class="nutrition-item">
+            <text class="nutrition-value">{{currentRecipe.nutrition.protein}}</text>
+            <text class="nutrition-label">蛋白质</text>
+          </view>
+          <view class="nutrition-item">
+            <text class="nutrition-value">{{currentRecipe.nutrition.fat}}</text>
+            <text class="nutrition-label">脂肪</text>
+          </view>
+          <view class="nutrition-item">
+            <text class="nutrition-value">{{currentRecipe.nutrition.carbohydrate}}</text>
+            <text class="nutrition-label">碳水</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 购物清单 -->
+      <view class="section-card" wx:if="{{currentRecipe.shoppingList && currentRecipe.shoppingList.length > 0}}">
+        <view class="section-header">
+          <van-icon name="todo-list-o" size="20" color="#7232dd" />
+          <text class="section-title">购物清单</text>
+        </view>
+        
+        <view class="shopping-list">
+          <view 
+            class="shopping-item" 
+            wx:for="{{currentRecipe.shoppingList}}" 
+            wx:key="*this"
+          >
+            <van-icon name="checked" size="16" color="#07c160" />
+            <text>{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 小贴士 -->
+      <view class="section-card" wx:if="{{currentRecipe.tips && currentRecipe.tips.length > 0}}">
+        <view class="section-header">
+          <van-icon name="bulb-o" size="20" color="#ffd700" />
+          <text class="section-title">烹饪小贴士</text>
+        </view>
+        
+        <view class="tips-list">
+          <view 
+            class="tip-item" 
+            wx:for="{{currentRecipe.tips}}" 
+            wx:key="*this"
+          >
+            <van-icon name="success" size="16" color="#07c160" />
+            <text>{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <van-button 
+          type="default" 
+          size="large" 
+          round
+          block
+          bindtap="generateNewRecipe"
+        >
+          <van-icon name="replay" size="20" />
+          重新生成
+        </van-button>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!currentRecipe && recipeHistory.length === 0 && !isGenerating}}">
+      <van-icon name="info-o" size="80" color="#c8c9cc" />
+      <text class="empty-text">暂无食谱记录</text>
+      <van-button 
+        type="primary" 
+        round
+        bindtap="generateRecipe"
+        style="margin-top: 40rpx;"
+      >
+        生成第一个食谱
+      </van-button>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-overlay" wx:if="{{isGenerating}}">
+      <van-loading size="48px" color="#07c160" vertical>
+        正在生成个性化食谱...
+      </van-loading>
+      <text class="loading-text">AI正在根据您的需求定制食谱</text>
+    </view>
+  </scroll-view>
+</view>

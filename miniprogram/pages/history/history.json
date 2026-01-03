@@ -1,0 +1,16 @@
+{
+  "usingComponents": {
+    "van-button": "vant-weapp/button/index",
+    "van-icon": "vant-weapp/icon/index",
+    "van-tab": "vant-weapp/tab/index",
+    "van-tabs": "vant-weapp/tabs/index",
+    "van-cell": "vant-weapp/cell/index",
+    "van-cell-group": "vant-weapp/cell-group/index",
+    "van-tag": "vant-weapp/tag/index",
+    "van-loading": "vant-weapp/loading/index",
+    "food-card": "/components/food-card/index"
+  },
+  "navigationBarTitleText": "历史记录",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50
+}

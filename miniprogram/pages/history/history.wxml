@@ -1,0 +1,125 @@
+<!--pages/history/history.wxml-->
+<view class="container">
+  <!-- 统计信息 -->
+  <view class="stats-section">
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{stats.total}}</text>
+        <text class="stat-label">总记录</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.today}}</text>
+        <text class="stat-label">今日</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.week}}</text>
+        <text class="stat-label">本周</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.month}}</text>
+        <text class="stat-label">本月</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-section">
+    <van-tabs active="{{filterType}}" bind:change="switchFilter">
+      <van-tab title="全部" name="all"></van-tab>
+      <van-tab title="今日" name="today"></van-tab>
+      <van-tab title="本周" name="week"></van-tab>
+      <van-tab title="本月" name="month"></van-tab>
+    </van-tabs>
+  </view>
+
+  <!-- 历史记录列表 -->
+  <view class="history-section">
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <van-button 
+        type="default" 
+        size="small" 
+        icon="delete-o" 
+        bindtap="clearHistory"
+      >
+        清空历史
+      </van-button>
+      <van-button 
+        type="primary" 
+        size="small" 
+        icon="down" 
+        bindtap="exportData"
+      >
+        导出数据
+      </van-button>
+    </view>
+
+    <!-- 记录列表 -->
+    <view class="history-list">
+      <view class="empty-state" wx:if="{{historyList.length === 0 && !loading}}">
+        <van-icon name="search" size="80" color="#c8c9cc" />
+        <text class="empty-text">暂无历史记录</text>
+      </view>
+      
+      <view 
+        wx:for="{{historyList}}" 
+        wx:key="id"
+        class="history-item"
+        bindtap="viewDetail"
+        data-id="{{item.id}}"
+      >
+        <food-card food="{{item}}" />
+        <view class="item-info">
+          <view class="item-time">
+            <van-icon name="clock-o" size="14" color="#999" />
+            <text>{{item.time}}</text>
+            <van-tag 
+              wx:if="{{item.type === 'ai'}}" 
+              type="primary" 
+              size="mini"
+            >
+              AI识别
+            </van-tag>
+            <van-tag 
+              wx:else 
+              type="warning" 
+              size="mini"
+            >
+              手动添加
+            </van-tag>
+          </view>
+          <view class="item-tags">
+            <van-tag 
+              wx:for="{{[item.tags]}}" 
+              wx:key="index"
+              type="success" 
+              size="mini"
+            >
+              {{item}}
+            </van-tag>
+          </view>
+          <view class="item-actions">
+            <van-button 
+              type="danger" 
+              size="mini" 
+              plain
+              bindtap="deleteRecord"
+              data-id="{{item.id}}"
+              catchtap
+            >
+              删除
+            </van-button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{loading}}">
+        <van-loading size="24px">加载中...</van-loading>
+      </view>
+      <view class="load-more" wx:if="{{!hasMore && historyList.length > 0}}">
+        <text class="no-more">没有更多了</text>
+      </view>
+    </view>
+  </view>
+</view>

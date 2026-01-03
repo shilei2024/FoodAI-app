@@ -1,0 +1,251 @@
+<!--pages/detail/detail.wxml-->
+<view class="container">
+  <!-- 自定义导航栏 -->
+  <view class="custom-navbar">
+    <view class="nav-left" bindtap="goBack">
+      <van-icon name="arrow-left" size="20" color="#333" />
+    </view>
+    <view class="nav-title">
+      <text>{{pageType === 'ai' ? 'AI识别' : '食物详情'}}</text>
+    </view>
+    <view class="nav-right">
+      <van-icon 
+        name="{{isFavorite ? 'star' : 'star-o'}}" 
+        size="20" 
+        color="{{isFavorite ? '#ffd700' : '#333'}}"
+        bindtap="toggleFavorite"
+        wx:if="{{foodDetail}}"
+      />
+    </view>
+  </view>
+
+  <!-- AI识别图片选择 -->
+  <view class="ai-section" wx:if="{{pageType === 'ai' && showImagePicker}}">
+    <view class="ai-prompt">
+      <van-icon name="photo" size="60" color="#07c160" />
+      <text class="prompt-title">选择食物图片</text>
+      <text class="prompt-desc">请拍摄或从相册选择食物照片进行识别</text>
+    </view>
+    <view class="ai-actions">
+      <van-button type="primary" size="large" round bindtap="chooseImage">
+        <van-icon name="photo" size="20" />
+        选择图片
+      </van-button>
+      <van-button type="default" size="large" round bindtap="cancelAIRecognition">
+        取消
+      </van-button>
+    </view>
+  </view>
+
+  <!-- AI识别处理中 -->
+  <view class="ai-processing" wx:if="{{aiProcessing}}">
+    <van-loading size="48px" vertical>AI识别中...</van-loading>
+    <text class="processing-text">正在分析食物成分，请稍候</text>
+  </view>
+
+  <!-- 食物详情内容 -->
+  <view class="content" wx:if="{{foodDetail && !aiProcessing}}">
+    <!-- 食物图片和基本信息 -->
+    <view class="food-header">
+      <image class="food-image" src="{{foodDetail.image}}" mode="aspectFill"></image>
+      <view class="food-basic">
+        <view class="food-name-section">
+          <text class="food-name">{{foodDetail.name}}</text>
+          <text class="food-calories">{{foodDetail.calories}} 千卡/100g</text>
+        </view>
+        <view class="food-tags">
+          <van-tag 
+            wx:for="{{foodDetail.tags}}" 
+            wx:key="index"
+            type="primary" 
+            size="small"
+          >
+            {{item}}
+          </van-tag>
+        </view>
+      </view>
+    </view>
+
+    <!-- 食物描述 -->
+    <view class="section">
+      <view class="section-title">
+        <van-icon name="description" size="18" />
+        <text>食物描述</text>
+      </view>
+      <text class="food-description">{{foodDetail.description}}</text>
+    </view>
+
+    <!-- 营养信息图表 -->
+    <view class="section" wx:if="{{nutritionData}}">
+      <view class="section-title">
+        <van-icon name="chart-trending-o" size="18" />
+        <text>营养成分图表</text>
+      </view>
+      <nutrition-chart data="{{nutritionData}}" />
+    </view>
+
+    <!-- 营养成分分类详情 -->
+    <view class="section" wx:if="{{nutritionCategories}}">
+      <view class="section-title">
+        <van-icon name="nutrition" size="18" />
+        <text>营养成分详情</text>
+      </view>
+      
+      <!-- 基础物质 -->
+      <view class="nutrition-category" wx:if="{{nutritionCategories.basic && nutritionCategories.basic.length > 0}}">
+        <view class="category-title">
+          <van-icon name="fire-o" size="16" color="#07c160" />
+          <text class="category-name">基础物质</text>
+        </view>
+        <view class="nutrition-list">
+          <view class="nutrition-item" wx:for="{{nutritionCategories.basic}}" wx:key="index">
+            <text class="nutrition-label">{{item.label}}</text>
+            <text class="nutrition-value">{{item.value}}{{item.unit}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 维生素 -->
+      <view class="nutrition-category" wx:if="{{nutritionCategories.vitamin && nutritionCategories.vitamin.length > 0}}">
+        <view class="category-title">
+          <van-icon name="flower-o" size="16" color="#1989fa" />
+          <text class="category-name">维生素</text>
+        </view>
+        <view class="nutrition-list">
+          <view class="nutrition-item" wx:for="{{nutritionCategories.vitamin}}" wx:key="index">
+            <text class="nutrition-label">{{item.label}}</text>
+            <text class="nutrition-value">{{item.value}}{{item.unit}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 矿物质 -->
+      <view class="nutrition-category" wx:if="{{nutritionCategories.mineral && nutritionCategories.mineral.length > 0}}">
+        <view class="category-title">
+          <van-icon name="gem-o" size="16" color="#ff976a" />
+          <text class="category-name">矿物质</text>
+        </view>
+        <view class="nutrition-list">
+          <view class="nutrition-item" wx:for="{{nutritionCategories.mineral}}" wx:key="index">
+            <text class="nutrition-label">{{item.label}}</text>
+            <text class="nutrition-value">{{item.value}}{{item.unit}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 其他 -->
+      <view class="nutrition-category" wx:if="{{nutritionCategories.other && nutritionCategories.other.length > 0}}">
+        <view class="category-title">
+          <van-icon name="more-o" size="16" color="#7232dd" />
+          <text class="category-name">其他成分</text>
+        </view>
+        <view class="nutrition-list">
+          <view class="nutrition-item" wx:for="{{nutritionCategories.other}}" wx:key="index">
+            <text class="nutrition-label">{{item.label}}</text>
+            <text class="nutrition-value">{{item.value}}{{item.unit}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 健康益处 -->
+    <view class="section" wx:if="{{foodDetail.benefits}}">
+      <view class="section-title">
+        <van-icon name="like-o" size="18" />
+        <text>健康益处</text>
+      </view>
+      <view class="benefits-list">
+        <view 
+          class="benefit-item" 
+          wx:for="{{foodDetail.benefits}}" 
+          wx:key="index"
+        >
+          <van-icon name="success" size="16" color="#07c160" />
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 实用信息 -->
+    <view class="section">
+      <view class="section-title">
+        <van-icon name="info-o" size="18" />
+        <text>实用信息</text>
+      </view>
+      <view class="practical-info">
+        <view class="info-item">
+          <text class="info-label">建议份量：</text>
+          <text class="info-value">{{foodDetail.servingSize}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">保存方法：</text>
+          <text class="info-value">{{foodDetail.storageTips}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- AI识别建议 -->
+    <view class="section" wx:if="{{aiResult && aiResult.suggestions}}">
+      <view class="section-title">
+        <van-icon name="bulb-o" size="18" />
+        <text>AI建议</text>
+      </view>
+      <view class="suggestions">
+        <view 
+          class="suggestion-item" 
+          wx:for="{{aiResult.suggestions}}" 
+          wx:key="index"
+        >
+          <van-icon name="comment-o" size="16" color="#1989fa" />
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <van-button 
+        type="primary" 
+        size="large" 
+        round
+        bindtap="saveRecord"
+      >
+        <van-icon name="success" size="20" />
+        保存记录
+      </van-button>
+      <van-button 
+        type="default" 
+        size="large" 
+        round
+        bindtap="shareFood"
+        wx:if="{{pageType !== 'ai'}}"
+      >
+        <van-icon name="share" size="20" />
+        分享
+      </van-button>
+      <van-button 
+        type="warning" 
+        size="large" 
+        round
+        bindtap="redoRecognition"
+        wx:if="{{pageType === 'ai'}}"
+      >
+        <van-icon name="replay" size="20" />
+        重新识别
+      </van-button>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <van-loading size="48px" vertical>加载中...</van-loading>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty" wx:if="{{!foodDetail && !loading && !aiProcessing && !showImagePicker}}">
+    <view class="empty-state">
+      <van-icon name="info-o" size="80" color="#c8c9cc" />
+      <text class="empty-text">暂无食物信息</text>
+    </view>
+  </view>
+</view>

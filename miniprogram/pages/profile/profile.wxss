@@ -1,0 +1,206 @@
+/* pages/profile/profile.wxss */
+.container {
+  padding: 20rpx;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* 用户信息卡片 */
+.user-card {
+  background: white;
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.user-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  margin-right: 30rpx;
+  border: 4rpx solid #f0f0f0;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.user-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-right: 15rpx;
+}
+
+.user-id {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.user-welcome {
+  font-size: 24rpx;
+  color: #07c160;
+}
+
+.user-actions {
+  text-align: right;
+}
+
+/* 会员专区 */
+.vip-section {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  color: white;
+  text-align: center;
+}
+
+.vip-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30rpx;
+}
+
+.vip-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-left: 10rpx;
+}
+
+.vip-features {
+  text-align: left;
+  margin-bottom: 40rpx;
+  padding: 0 20rpx;
+}
+
+.vip-features text {
+  display: block;
+  font-size: 26rpx;
+  margin-bottom: 15rpx;
+  opacity: 0.9;
+}
+
+/* 统计数据区域 */
+.stats-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.section-title text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-left: 10rpx;
+}
+
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -10rpx;
+}
+
+.stat-item {
+  flex: 0 0 calc(50% - 20rpx);
+  margin: 10rpx;
+  text-align: center;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+}
+
+.stat-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #07c160;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 设置区域 */
+.settings-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 版本信息 */
+.version-info {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.version-info text {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 10rpx;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 15rpx;
+  }
+  
+  .user-card,
+  .vip-section,
+  .stats-section,
+  .settings-section {
+    padding: 20rpx;
+  }
+  
+  .user-avatar {
+    width: 100rpx;
+    height: 100rpx;
+  }
+  
+  .user-name {
+    font-size: 32rpx;
+  }
+  
+  .vip-title {
+    font-size: 28rpx;
+  }
+  
+  .vip-features text {
+    font-size: 24rpx;
+  }
+  
+  .stat-value {
+    font-size: 32rpx;
+  }
+}

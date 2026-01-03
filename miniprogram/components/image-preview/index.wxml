@@ -1,0 +1,107 @@
+<!-- components/image-preview/index.wxml -->
+<view class="image-preview-container">
+  <!-- 图片容器 -->
+  <view class="image-container" bindtap="onImageTap">
+    <view class="image-wrapper" style="width: {{imageWidth}}; height: {{imageHeight}};">
+      <image
+        class="preview-image"
+        src="{{imageSrc}}"
+        mode="aspectFit"
+        show-menu-by-longpress
+        lazy-load
+        bindload="onImageLoad"
+        binderror="onImageError"
+        wx:if="{{!isError && !isLoading}}"
+      />
+      <!-- 加载状态 -->
+      <view class="loading-slot" wx:if="{{isLoading}}">
+        <van-loading size="48rpx" color="#07c160" />
+        <text class="loading-text">加载中...</text>
+      </view>
+      
+      <!-- 错误状态 -->
+      <view class="error-slot" wx:if="{{isError}}">
+        <van-icon name="photo-fail" size="48rpx" color="#999" />
+        <text class="error-text">图片加载失败</text>
+      </view>
+    </view>
+    
+    <!-- 缩放指示器 -->
+    <view class="scale-indicator" wx:if="{{showScaleIndicator}}">
+      <text>{{scale.toFixed(1)}}x</text>
+    </view>
+  </view>
+  
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <!-- 重新拍摄按钮 -->
+    <van-button
+      wx:if="{{showRetakeButton}}"
+      type="default"
+      size="small"
+      round
+      bindtap="onRetake"
+      class="action-button"
+    >
+      <van-icon name="replay" size="16" />
+      重新拍摄
+    </van-button>
+    
+    <!-- 旋转按钮 -->
+    <van-button
+      type="default"
+      size="small"
+      round
+      bindtap="onRotate"
+      class="action-button"
+    >
+      <van-icon name="replay" size="16" />
+      旋转 {{rotation}}°
+    </van-button>
+    
+    <!-- 缩放控制 -->
+    <view class="scale-controls" wx:if="{{enableScale}}">
+      <van-button
+        type="default"
+        size="mini"
+        round
+        bindtap="onZoomOut"
+        disabled="{{scale <= minScale}}"
+        class="scale-button"
+      >
+        <van-icon name="minus" size="12" />
+      </van-button>
+      
+      <text class="scale-text">{{scale.toFixed(1)}}x</text>
+      
+      <van-button
+        type="default"
+        size="mini"
+        round
+        bindtap="onZoomIn"
+        disabled="{{scale >= maxScale}}"
+        class="scale-button"
+      >
+        <van-icon name="plus" size="12" />
+      </van-button>
+    </view>
+    
+    <!-- 确认按钮 -->
+    <van-button
+      type="primary"
+      size="small"
+      round
+      bindtap="onConfirm"
+      class="action-button confirm-button"
+    >
+      <van-icon name="success" size="16" />
+      使用此图片
+    </van-button>
+  </view>
+  
+  <!-- 手势提示 -->
+  <view class="gesture-hint" wx:if="{{showGestureHint}}">
+    <van-icon name="info-o" size="16" color="#1989fa" />
+    <text>双指缩放，单指拖动</text>
+  </view>
+</view>

@@ -1,0 +1,394 @@
+/* pages/detail/detail.wxss */
+.container {
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* 自定义导航栏 */
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30rpx;
+  z-index: 1000;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-left,
+.nav-right {
+  width: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-title {
+  flex: 1;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+/* AI识别区域 */
+.ai-section {
+  padding: 200rpx 30rpx 100rpx;
+  text-align: center;
+}
+
+.ai-prompt {
+  margin-bottom: 60rpx;
+}
+
+.prompt-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin: 30rpx 0 20rpx;
+}
+
+.prompt-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+}
+
+.ai-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+  max-width: 400rpx;
+  margin: 0 auto;
+}
+
+/* AI处理中 */
+.ai-processing {
+  padding: 300rpx 30rpx;
+  text-align: center;
+}
+
+.processing-text {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 30rpx;
+}
+
+/* 内容区域 */
+.content {
+  padding: 108rpx 30rpx 40rpx;
+}
+
+/* 食物头部信息 */
+.food-header {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+}
+
+.food-image {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 15rpx;
+  margin-right: 30rpx;
+  object-fit: cover;
+}
+
+.food-basic {
+  flex: 1;
+}
+
+.food-name-section {
+  margin-bottom: 20rpx;
+}
+
+.food-name {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.food-calories {
+  font-size: 24rpx;
+  color: #ff976a;
+  font-weight: 500;
+}
+
+.food-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+/* 分区样式 */
+.section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25rpx;
+}
+
+.section-title text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-left: 10rpx;
+}
+
+/* 食物描述 */
+.food-description {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 健康益处 */
+.benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.benefit-item text {
+  font-size: 26rpx;
+  color: #333;
+  margin-left: 10rpx;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* 实用信息 */
+.practical-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.info-item {
+  display: flex;
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+  min-width: 140rpx;
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: #666;
+  flex: 1;
+}
+
+/* AI建议 */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  background: #f0f7ff;
+  padding: 20rpx;
+  border-radius: 10rpx;
+}
+
+.suggestion-item text {
+  font-size: 26rpx;
+  color: #1989fa;
+  margin-left: 10rpx;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding: 30rpx 0;
+}
+
+/* 加载状态 */
+.loading {
+  padding: 300rpx 30rpx;
+  text-align: center;
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40rpx;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.empty-text {
+  display: block;
+  margin-top: 30rpx;
+  font-size: 28rpx;
+  color: #969799;
+}
+
+.empty-old {
+  padding: 300rpx 30rpx;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .custom-navbar {
+    padding: 0 20rpx;
+    height: 80rpx;
+  }
+  
+  .content {
+    padding: 100rpx 20rpx 30rpx;
+  }
+  
+  .food-header,
+  .section {
+    padding: 20rpx;
+  }
+  
+  .food-image {
+    width: 120rpx;
+    height: 120rpx;
+    margin-right: 20rpx;
+  }
+  
+  .food-name {
+    font-size: 32rpx;
+  }
+  
+  .section-title text {
+    font-size: 28rpx;
+  }
+  
+  .food-description,
+  .benefit-item text,
+  .info-label,
+  .info-value,
+  .suggestion-item text {
+    font-size: 24rpx;
+  }
+}
+
+/* 营养分类样式 */
+.nutrition-category {
+  margin-bottom: 30rpx;
+  background: white;
+  border-radius: 12rpx;
+  padding: 25rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding-bottom: 15rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.category-name {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #333;
+  margin-left: 10rpx;
+}
+
+.nutrition-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.nutrition-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15rpx;
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  transition: all 0.2s ease;
+}
+
+.nutrition-item:active {
+  background: #f0f7ff;
+  transform: scale(0.98);
+}
+
+.nutrition-label {
+  font-size: 24rpx;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nutrition-value {
+  font-size: 24rpx;
+  color: #07c160;
+  font-weight: 500;
+  margin-left: 15rpx;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .nutrition-list {
+    grid-template-columns: 1fr;
+    gap: 15rpx;
+  }
+  
+  .nutrition-category {
+    padding: 20rpx;
+  }
+  
+  .category-name {
+    font-size: 24rpx;
+  }
+  
+  .nutrition-label,
+  .nutrition-value {
+    font-size: 22rpx;
+  }
+}

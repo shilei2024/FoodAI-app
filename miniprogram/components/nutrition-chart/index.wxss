@@ -1,0 +1,177 @@
+/* components/nutrition-chart/index.wxss */
+.nutrition-chart {
+  background: white;
+  border-radius: 16rpx;
+  padding: 25rpx;
+}
+
+/* 图表头部 */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25rpx;
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+}
+
+.chart-title text {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-left: 10rpx;
+}
+
+/* 图表类型切换 */
+.chart-type-switch {
+  display: flex;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+  padding: 4rpx;
+}
+
+.type-item {
+  padding: 8rpx 20rpx;
+  font-size: 22rpx;
+  color: #666;
+  border-radius: 6rpx;
+  transition: all 0.3s ease;
+}
+
+.type-item.active {
+  background: white;
+  color: #07c160;
+  font-weight: 500;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 图表容器 */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+.nutrition-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* 空状态 */
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #ccc;
+}
+
+.empty-text {
+  font-size: 24rpx;
+  margin-top: 15rpx;
+  color: #999;
+}
+
+/* 图例 */
+.chart-legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+  margin-top: 25rpx;
+  padding-top: 25rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  padding: 10rpx;
+  border-radius: 8rpx;
+  transition: all 0.2s ease;
+}
+
+.legend-item:active {
+  background-color: #f5f7fa;
+  transform: scale(0.98);
+}
+
+.legend-color {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 4rpx;
+  margin-right: 10rpx;
+}
+
+.legend-text {
+  font-size: 22rpx;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legend-value {
+  font-size: 20rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+.legend-unit {
+  font-size: 18rpx;
+  color: #999;
+  margin-left: 4rpx;
+}
+
+/* 图表说明 */
+.chart-description {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 15rpx;
+  background: #f0f7ff;
+  border-radius: 8rpx;
+}
+
+.description-text {
+  font-size: 22rpx;
+  color: #1989fa;
+  margin-left: 10rpx;
+  flex: 1;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .nutrition-chart {
+    padding: 20rpx;
+  }
+  
+  .chart-title text {
+    font-size: 26rpx;
+  }
+  
+  .type-item {
+    padding: 6rpx 15rpx;
+    font-size: 20rpx;
+  }
+  
+  .legend-text {
+    font-size: 20rpx;
+  }
+  
+  .legend-value {
+    font-size: 18rpx;
+  }
+  
+  .description-text {
+    font-size: 20rpx;
+  }
+  
+  .chart-legend {
+    grid-template-columns: 1fr;
+    gap: 15rpx;
+  }
+}

@@ -1,0 +1,125 @@
+<!--pages/profile/profile.wxml-->
+<view class="container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-header">
+      <image 
+        class="user-avatar" 
+        src="{{hasUserInfo ? userInfo.avatarUrl : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&auto=format'}}" 
+        mode="aspectFill"
+      ></image>
+      <view class="user-info">
+        <view class="user-name-section">
+          <text class="user-name">
+            {{hasUserInfo ? userInfo.nickName : '未登录用户'}}
+          </text>
+          <van-tag 
+            wx:if="{{isVip}}" 
+            type="danger" 
+            size="mini"
+          >
+            VIP
+          </van-tag>
+        </view>
+        <text class="user-id">ID: {{hasUserInfo ? userInfo.nickName : 'guest'}}</text>
+        <text class="user-welcome" wx:if="{{hasUserInfo}}">欢迎回来！</text>
+      </view>
+    </view>
+
+    <view class="user-actions">
+      <van-button 
+        wx:if="{{!hasUserInfo}}" 
+        type="primary" 
+        size="small" 
+        bindtap="getUserProfile"
+      >
+        立即登录
+      </van-button>
+      <van-button 
+        wx:else 
+        type="default" 
+        size="small" 
+        bindtap="logout"
+      >
+        退出登录
+      </van-button>
+    </view>
+  </view>
+
+  <!-- 会员专区 -->
+  <pay-wall wx:if="{{!isVip}}">
+    <view class="vip-section">
+      <view class="vip-header">
+        <van-icon name="diamond-o" size="24" color="#ffd700" />
+        <text class="vip-title">开通会员享特权</text>
+      </view>
+      <view class="vip-features">
+        <text>• 无限次AI识别</text>
+        <text>• 高级营养分析</text>
+        <text>• 专属食物库</text>
+        <text>• 无广告体验</text>
+      </view>
+      <van-button 
+        type="warning" 
+        size="large" 
+        round
+        bindtap="openVip"
+      >
+        <van-icon name="diamond-o" size="20" />
+        立即开通
+      </van-button>
+    </view>
+  </pay-wall>
+
+  <!-- 用户统计数据 -->
+  <view class="stats-section">
+    <view class="section-title">
+      <van-icon name="chart-trending-o" size="18" />
+      <text>我的数据</text>
+    </view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{userStats.totalRecords}}</text>
+        <text class="stat-label">总记录</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{userStats.aiRecords}}</text>
+        <text class="stat-label">AI识别</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{userStats.favoriteFoods}}</text>
+        <text class="stat-label">收藏食物</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{userStats.continuousDays}}天</text>
+        <text class="stat-label">连续记录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置选项 -->
+  <view class="settings-section">
+    <view class="section-title">
+      <van-icon name="setting-o" size="18" />
+      <text>设置</text>
+    </view>
+    <van-cell-group>
+      <van-cell 
+        wx:for="{{settings}}" 
+        wx:key="id"
+        title="{{item.title}}"
+        label="{{item.desc}}"
+        icon="{{item.icon}}"
+        is-link
+        bindtap="navigateToSetting"
+        data-id="{{item.id}}"
+      />
+    </van-cell-group>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-info">
+    <text>AI轻食记 v1.0.0</text>
+    <text>© 2025 轻食记AI Team</text>
+  </view>
+</view>

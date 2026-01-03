@@ -1,0 +1,74 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/history/history",
+    "pages/profile/profile",
+    "pages/detail/detail"
+  ],
+  
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#07c160",
+    "navigationBarTitleText": "AI轻食记",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f7fa",
+    "enablePullDownRefresh": true
+  },
+  
+  "usingComponents": {
+    "van-button": "vant-weapp/button/index",
+    "van-cell": "vant-weapp/cell/index",
+    "van-cell-group": "vant-weapp/cell-group/index",
+    "van-icon": "vant-weapp/icon/index",
+    "van-loading": "vant-weapp/loading/index",
+    "van-popup": "vant-weapp/popup/index",
+    "van-tabbar": "vant-weapp/tabbar/index",
+    "van-tabbar-item": "vant-weapp/tabbar-item/index",
+    "van-dialog": "vant-weapp/dialog/index",
+    "van-tag": "vant-weapp/tag/index",
+    "van-tab": "vant-weapp/tab/index",
+    "van-tabs": "vant-weapp/tabs/index",
+    "van-action-sheet": "vant-weapp/action-sheet/index",
+    "van-notify": "vant-weapp/notify/index",
+    "van-toast": "vant-weapp/toast/index"
+  },
+  
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
+  
+  "sitemapLocation": "sitemap.json",
+  
+  "style": "v2",
+  
+  "lazyCodeLoading": "requiredComponents",
+  
+  "useExtendedLib": {
+    "weui": true
+  },
+  
+  "networkTimeout": {
+    "request": 10000,
+    "connectSocket": 10000,
+    "uploadFile": 10000,
+    "downloadFile": 10000
+  },
+  
+  "debug": false,
+  
+  "resizable": false,
+  
+  "darkmode": true,
+  
+  "themeLocation": "theme.json",
+  
+  "serviceProviderTicket": "",
+  
+  "embeddedAppIdList": [],
+  
+  "requiredBackgroundModes": [
+    "audio",
+    "location"
+  ]
+}

@@ -1,0 +1,268 @@
+/* components/image-cropper/index.wxss */
+.image-cropper-container {
+  width: 100%;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+}
+
+/* 裁剪区域 */
+.cropper-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* 图片容器 */
+.image-container {
+  position: absolute;
+  will-change: transform;
+  touch-action: none;
+}
+
+.cropper-image {
+  display: block;
+  will-change: transform;
+}
+
+/* 裁剪框 */
+.crop-frame {
+  position: absolute;
+  border: 2rpx solid #ffffff;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.crop-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+}
+
+/* 裁剪框角点 */
+.corner {
+  position: absolute;
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid #ffffff;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: auto;
+}
+
+.corner.top-left {
+  top: -20rpx;
+  left: -20rpx;
+  border-right: none;
+  border-bottom: none;
+  cursor: nwse-resize;
+}
+
+.corner.top-right {
+  top: -20rpx;
+  right: -20rpx;
+  border-left: none;
+  border-bottom: none;
+  cursor: nesw-resize;
+}
+
+.corner.bottom-left {
+  bottom: -20rpx;
+  left: -20rpx;
+  border-right: none;
+  border-top: none;
+  cursor: nesw-resize;
+}
+
+.corner.bottom-right {
+  bottom: -20rpx;
+  right: -20rpx;
+  border-left: none;
+  border-top: none;
+  cursor: nwse-resize;
+}
+
+/* 裁剪框网格线 */
+.grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.grid-line.vertical-1 {
+  top: 0;
+  left: 33.33%;
+  width: 1rpx;
+  height: 100%;
+}
+
+.grid-line.vertical-2 {
+  top: 0;
+  left: 66.66%;
+  width: 1rpx;
+  height: 100%;
+}
+
+.grid-line.horizontal-1 {
+  top: 33.33%;
+  left: 0;
+  width: 100%;
+  height: 1rpx;
+}
+
+.grid-line.horizontal-2 {
+  top: 66.66%;
+  left: 0;
+  width: 100%;
+  height: 1rpx;
+}
+
+/* 遮罩层 */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.mask {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.mask.middle {
+  display: flex;
+  width: 100%;
+}
+
+.crop-area {
+  flex: 1;
+  background: transparent;
+}
+
+/* 操作区域 */
+.control-area {
+  background: #1a1a1a;
+  padding: 32rpx;
+  border-top: 1rpx solid #333;
+}
+
+/* 比例选择器 */
+.ratio-selector {
+  margin-bottom: 32rpx;
+}
+
+.ratio-title {
+  font-size: 28rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.ratio-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.ratio-button {
+  min-width: 120rpx !important;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.action-button {
+  flex: 1;
+  min-width: 140rpx;
+}
+
+/* 缩放控制 */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  background: #2a2a2a;
+  border-radius: 40rpx;
+  padding: 8rpx 16rpx;
+}
+
+.zoom-button {
+  width: 60rpx !important;
+  height: 60rpx !important;
+  min-width: auto !important;
+  padding: 0 !important;
+}
+
+.zoom-text {
+  font-size: 28rpx;
+  color: #fff;
+  margin: 0 24rpx;
+  min-width: 80rpx;
+  text-align: center;
+}
+
+/* 尺寸信息 */
+.size-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: #666;
+  margin-top: 16rpx;
+}
+
+/* 加载状态 */
+.loading-overlay {
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 40rpx;
+  border-radius: 20rpx;
+  z-index: 10000;
+}
+
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .control-area {
+    padding: 24rpx;
+  }
+  
+  .action-buttons {
+    gap: 16rpx;
+  }
+  
+  .action-button {
+    min-width: 120rpx;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.image-cropper-container {
+  animation: fadeIn 0.3s ease;
+}

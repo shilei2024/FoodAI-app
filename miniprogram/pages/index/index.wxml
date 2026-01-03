@@ -1,0 +1,231 @@
+<!--pages/index/index.wxml-->
+<view class="page-container">
+  <!-- 顶部标题区域 -->
+  <view class="header">
+    <text class="title">AI轻食记</text>
+    <text class="subtitle">智能食物识别与营养分析</text>
+  </view>
+  
+  <!-- 主要内容区域 -->
+  <view class="main-content">
+    <!-- 大圆形拍照按钮 -->
+    <view class="camera-section">
+      <view class="camera-btn-container">
+        <view class="camera-btn" bindtap="takePhoto">
+          <!-- 相机图标 -->
+          <!-- icon type="camera" size="60" color="#FF0000" / -->
+          <van-icon name="photograph" size="80" color="#ffffff" class="camera-icon" />
+          <!-- 闪烁效果 -->
+          <view class="pulse-effect"></view>
+        </view>
+        <text class="camera-text">拍照或上传识别</text>
+      </view>
+    </view>
+    
+    <!-- 输入框区域 -->
+    <view class="input-section">
+      <!-- 输入框区域 -->
+      <view class="input-row">
+        <input 
+          class="food-input" 
+          placeholder="请输入食物名称，如：苹果、米饭" 
+          placeholder-class="placeholder"
+          value="{{foodName}}"
+          bindinput="onFoodInput"
+          bindconfirm="searchFood"
+        />
+      </view>
+      
+      <!-- 搜索按钮区域 -->
+      <view class="search-btn-row">
+        <view class="search-btn-wrapper">
+          <van-button 
+            type="primary" 
+            size="samll" 
+            bindtap="searchFood"
+            custom-class="search-btn"
+          >
+            搜索
+          </van-button>
+        </view>
+      </view>
+      
+      <!-- 热门食物标签 -->
+      <view class="hot-tags">
+        <text class="hot-title">热门食物：</text>
+        <view class="tags-container">
+          <van-tag 
+            wx:for="{{hotFoods}}" 
+            wx:key="index" 
+            type="primary" 
+            size="medium"
+            custom-class="food-tag"
+            bindtap="selectHotFood"
+            data-food="{{item}}"
+          >
+            {{item}}
+          </van-tag>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 结果展示区域 -->
+    <view class="result-section" wx:if="{{showResult}}">
+      <view class="section-title">
+        <van-icon name="success" size="20" color="#07c160" />
+        <text class="section-title-text">识别结果</text>
+      </view>
+      
+      <view class="result-card">
+        <!-- 食物图片（只在有图片URL时显示） -->
+        <view class="food-image-container" wx:if="{{result.imageUrl && result.imageUrl !== ''}}">
+          <image 
+            src="{{result.imageUrl}}" 
+            mode="aspectFill" 
+            class="food-image"
+            bindtap="previewImage"
+          />
+          <view class="image-overlay">
+            <!--van-icon name="photo-o" size="24" color="#ffffff" /-->
+          </view>
+        </view>
+        
+        <!-- 食物信息 -->
+        <view class="food-info">
+          <!-- 文字搜索：显示食物名称和重量 -->
+          <view class="food-name-row" wx:if="{{result.searchType === 'text'}}">
+            <text class="food-name">{{result.name || '未知食物'}}</text>
+            <text class="food-weight" wx:if="{{result.weight}}">{{result.weight}}</text>
+            <van-tag 
+              type="success" 
+              size="small"
+              wx:if="{{result.calories}}"
+            >
+              {{result.calories}}千卡
+            </van-tag>
+          </view>
+          
+          <!-- 拍照识别：显示食物名称 -->
+          <view class="food-name-row" wx:elif="{{result.searchType === 'photo'}}">
+            <text class="food-name">{{result.name || '未知食物'}}</text>
+            <van-tag 
+              type="success" 
+              size="small"
+              wx:if="{{result.calories}}"
+            >
+              {{result.calories}}千卡
+            </van-tag>
+          </view>
+          
+          <!-- 图片处理信息 -->
+          <view class="image-process-info" wx:if="{{result.imageInfo}}">
+            <van-tag 
+              type="primary" 
+              size="mini"
+              wx:if="{{result.imageInfo.processed}}"
+            >
+              已压缩
+            </van-tag>
+            <text class="image-size">
+              尺寸: {{result.imageInfo.width}}×{{result.imageInfo.height}}
+            </text>
+            <text class="image-size" wx:if="{{result.imageInfo.size}}">
+              大小: {{result.imageInfo.size}}
+            </text>
+          </view>
+          
+          <text class="food-desc" wx:if="{{result.description}}">
+            {{result.description}}
+          </text>
+          
+          <!-- 营养成分（只显示前6个） -->
+          <view class="nutrition-grid" wx:if="{{result.nutrition && result.nutrition.length > 0}}">
+            <view class="nutrition-item" wx:for="{{result.nutrition.slice(0, 6)}}" wx:key="index">
+              <text class="nutrition-value">{{item.value}}{{item.unit}}</text>
+              <text class="nutrition-label">{{item.label}}</text>
+            </view>
+            <!-- 如果有更多营养信息，显示查看详情提示 -->
+            <view class="more-nutrition-hint" wx:if="{{result.nutrition.length > 6}}">
+              <text class="hint-text">还有{{result.nutrition.length - 6}}个营养成分，请在详情中查看</text>
+            </view>
+          </view>
+          
+          <!-- 操作按钮 -->
+          <view class="action-buttons">
+            <view class="action-btn-container view-btn">
+              <van-button 
+                type="primary" 
+                size="small" 
+                icon="chart-trending-o"
+                bindtap="viewDetails"
+                custom-class="action-btn"
+              >
+                查看详情
+              </van-button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 历史记录预览 -->
+    <view class="history-section" wx:if="{{recentHistory.length > 0}}">
+      <view class="section-title">
+        <van-icon name="clock-o" size="20" color="#07c160" />
+        <text class="section-title-text" style="margin-right: 4px;">最近记录</text>
+        <text class="view-all" bindtap="goToHistory">查看全部</text>
+      </view>
+      
+      <scroll-view class="history-scroll" scroll-x="true">
+        <view 
+          class="history-item" 
+          wx:for="{{recentHistory}}" 
+          wx:key="index"
+          bindtap="viewHistoryItem"
+          data-index="{{index}}"
+        >
+          <image 
+            src="{{item.imageUrl}}" 
+            mode="aspectFill" 
+            class="history-image"
+          />
+          <text class="history-name">{{item.name}}</text>
+          <text class="history-time">{{item.time}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+  
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <van-tabbar active="{{activeTab}}" bind:change="onTabChange">
+      <van-tabbar-item icon="home-o" name="home">首页</van-tabbar-item>
+      <van-tabbar-item icon="photo-o" name="camera">拍照</van-tabbar-item>
+      <van-tabbar-item icon="clock-o" name="history">历史</van-tabbar-item>
+      <van-tabbar-item icon="user-o" name="profile">我的</van-tabbar-item>
+    </van-tabbar>
+  </view>
+  
+  <!-- 加载动画 -->
+  <van-loading 
+    wx:if="{{loading}}" 
+    type="spinner" 
+    color="#07c160" 
+    size="48rpx"
+    custom-class="global-loading"
+  >
+    加载中...
+  </van-loading>
+  
+  <!-- Toast提示 -->
+  <van-toast id="van-toast" />
+  
+  <!-- Dialog对话框 -->
+  <van-dialog id="van-dialog" />
+  
+  <!-- 调试按钮（开发时使用） -->
+  <view class="debug-buttons" wx:if="{{debugMode}}">
+    <button bindtap="testDirectCamera" size="mini">测试直接拍照</button>
+    <button bindtap="testDeepseekAPI" size="mini" style="margin-top: 10rpx;">测试Deepseek API</button>
+  </view>
+</view>

@@ -1,0 +1,23 @@
+{
+  "name": "baidu-ai",
+  "version": "1.0.0",
+  "description": "百度AI云函数，用于食物识别和通用物体识别",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  },
+  "author": "FoodAI Team",
+  "license": "MIT",
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 20,
+    "runtime": "Nodejs16",
+    "envVariables": {
+      "BAIDU_AI_API_KEY": "",
+      "BAIDU_AI_SECRET_KEY": ""
+    }
+  }
+}

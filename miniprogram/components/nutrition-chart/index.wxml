@@ -1,0 +1,79 @@
+<!--components/nutrition-chart/index.wxml-->
+<view class="nutrition-chart">
+  <!-- 图表标题 -->
+  <view class="chart-header" wx:if="{{showTitle}}">
+    <view class="chart-title">
+      <van-icon name="chart-trending-o" size="18" />
+      <text>营养成分分析</text>
+    </view>
+    <!-- 图表类型切换 -->
+    <view class="chart-type-switch">
+      <view 
+        class="type-item {{type === 'bar' ? 'active' : ''}}"
+        bindtap="switchChartType"
+        data-type="bar"
+      >
+        柱状图
+      </view>
+      <view 
+        class="type-item {{type === 'pie' ? 'active' : ''}}"
+        bindtap="switchChartType"
+        data-type="pie"
+      >
+        饼图
+      </view>
+      <view 
+        class="type-item {{type === 'radar' ? 'active' : ''}}"
+        bindtap="switchChartType"
+        data-type="radar"
+      >
+        雷达图
+      </view>
+    </view>
+  </view>
+
+  <!-- 图表容器 -->
+  <view class="chart-container" style="height: {{height}}rpx;">
+    <!-- 使用canvas绘制 -->
+    <canvas 
+      wx:if="{{chartConfig.categories.length > 0}}"
+      canvas-id="nutrition-canvas"
+      class="nutrition-canvas"
+      style="width: 100%; height: 100%;"
+      bindtap="onChartClick"
+      bindtouchstart="onChartTouchStart"
+      bindtouchmove="onChartTouchMove"
+      bindtouchend="onChartTouchEnd"
+    ></canvas>
+    
+    <!-- 空状态 -->
+    <view class="chart-empty" wx:else>
+      <van-icon name="chart-trending-o" size="48" color="#ccc" />
+      <text class="empty-text">暂无营养数据</text>
+    </view>
+  </view>
+
+  <!-- 图例 -->
+  <view class="chart-legend" wx:if="{{showLegend && chartConfig.categories.length > 0}}">
+    <view 
+      class="legend-item" 
+      wx:for="{{chartConfig.categories}}" 
+      wx:key="index"
+      bindtap="onLegendClick"
+      data-index="{{index}}"
+    >
+      <view class="legend-color" style="background-color: {{chartConfig.colors ? chartConfig.colors[index] : chartConfig.series[0].color}};"></view>
+      <text class="legend-text">{{item}}</text>
+      <text class="legend-value">
+        {{chartConfig.series[0].data[index].toFixed(1)}}
+        <text class="legend-unit">{{chartConfig.units ? chartConfig.units[index] : '单位'}}</text>
+      </text>
+    </view>
+  </view>
+
+  <!-- 图表说明 -->
+  <view class="chart-description" wx:if="{{showTitle}}">
+    <van-icon name="info-o" size="14" color="#1989fa" />
+    <text class="description-text">数据基于100克可食部计算，仅供参考</text>
+  </view>
+</view>

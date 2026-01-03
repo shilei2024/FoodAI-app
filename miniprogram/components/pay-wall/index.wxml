@@ -1,0 +1,134 @@
+<!--components/pay-wall/index.wxml-->
+<view class="pay-wall">
+  <!-- 插槽内容 -->
+  <slot></slot>
+
+  <!-- 付费墙弹窗 -->
+  <view 
+    class="pay-modal {{showPayWall ? 'show' : ''}}"
+    catchtap="onMaskTap"
+  >
+    <view class="modal-content" catchtap>
+      <!-- 关闭按钮 -->
+      <view 
+        class="close-btn" 
+        wx:if="{{showClose}}"
+        bindtap="onClose"
+      >
+        <van-icon name="cross" size="20" color="#999" />
+      </view>
+
+      <!-- 付费墙内容 -->
+      <view class="pay-content">
+        <!-- 标题 -->
+        <view class="pay-title">
+          <van-icon name="diamond-o" size="28" color="#ffd700" />
+          <text>解锁{{type === 'vip' ? '会员' : featureName || '高级功能'}}</text>
+        </view>
+
+        <!-- 功能描述 -->
+        <view class="feature-description">
+          <text wx:if="{{type === 'vip'}}">开通会员享受以下特权：</text>
+          <text wx:else>解锁{{featureName}}功能：</text>
+        </view>
+
+        <!-- 功能列表 -->
+        <view class="feature-list">
+          <view class="feature-item">
+            <van-icon name="success" size="16" color="#07c160" />
+            <text>无限次AI食物识别</text>
+          </view>
+          <view class="feature-item">
+            <van-icon name="success" size="16" color="#07c160" />
+            <text>详细营养分析报告</text>
+          </view>
+          <view class="feature-item">
+            <van-icon name="success" size="16" color="#07c160" />
+            <text>专属食物数据库</text>
+          </view>
+          <view class="feature-item">
+            <van-icon name="success" size="16" color="#07c160" />
+            <text>无广告纯净体验</text>
+          </view>
+          <view class="feature-item">
+            <van-icon name="success" size="16" color="#07c160" />
+            <text>优先客服支持</text>
+          </view>
+        </view>
+
+        <!-- 套餐选择 -->
+        <view class="plan-selection">
+          <view class="plan-title">选择套餐</view>
+          <view class="plan-options">
+            <view 
+              class="plan-option {{selectedPlan === 'monthly' ? 'selected' : ''}}"
+              bindtap="selectPlan"
+              data-plan="monthly"
+            >
+              <view class="plan-name">月付</view>
+              <view class="plan-price">
+                <text class="price">¥{{priceInfo.monthly}}</text>
+                <text class="period">/月</text>
+              </view>
+              <view class="plan-save" wx:if="{{selectedPlan === 'monthly'}}">推荐</view>
+            </view>
+            
+            <view 
+              class="plan-option {{selectedPlan === 'yearly' ? 'selected' : ''}}"
+              bindtap="selectPlan"
+              data-plan="yearly"
+            >
+              <view class="plan-name">年付</view>
+              <view class="plan-price">
+                <text class="price">¥{{priceInfo.yearly}}</text>
+                <text class="period">/年</text>
+              </view>
+              <view class="plan-save">节省 ¥{{yearlySaveAmount}}</view>
+            </view>
+            
+            <view 
+              class="plan-option {{selectedPlan === 'lifetime' ? 'selected' : ''}}"
+              bindtap="selectPlan"
+              data-plan="lifetime"
+            >
+              <view class="plan-name">永久</view>
+              <view class="plan-price">
+                <text class="price">¥{{priceInfo.lifetime}}</text>
+                <text class="period">一次性</text>
+              </view>
+              <view class="plan-save">最划算</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 支付按钮 -->
+        <view class="pay-actions">
+          <van-button 
+            type="warning" 
+            size="large" 
+            round
+            block
+            bindtap="payNow"
+            loading="{{paying}}"
+            loading-text="支付中..."
+          >
+            <van-icon name="diamond-o" size="20" />
+            立即支付 ¥{{priceInfo[selectedPlan]}}
+          </van-button>
+          
+          <view class="secondary-actions">
+            <text class="action-link" bindtap="restorePurchase">恢复购买</text>
+            <text class="action-link" bindtap="viewBenefits">查看权益详情</text>
+          </view>
+        </view>
+
+        <!-- 支付说明 -->
+        <view class="pay-notice">
+          <text>• 支付成功后自动开通会员</text>
+          <text>• 支持7天无理由退款</text>
+          <text>• 如有问题请联系客服</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
