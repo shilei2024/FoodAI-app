@@ -128,15 +128,13 @@ payment: {
 ## 📚 文档
 
 ### 核心文档
-- 📖 [配置指南](./配置指南.md) - 详细的配置步骤
+- 📖 [配置指南](./CONFIGURATION.md) - 简明的配置步骤
 - 📖 [功能完成度报告](./未完成功能.md) - 功能状态和计划
-- 📖 [代码优化说明](./代码优化说明.md) - 优化内容详解
-- 📖 [项目优化完成报告](./项目优化完成报告.md) - 优化总结
 
-### 技术文档
-- 📖 [项目结构说明](./项目结构说明.md) - 项目架构
-- 📖 [Deepseek API集成配置指南](./Deepseek%20API集成配置指南.md) - AI服务配置
-- 📖 [百度AI服务集成配置指南](./百度AI服务集成配置指南.md) - 备选AI服务
+### 快速参考
+- 📖 项目结构：见下方项目结构图
+- 📖 API配置：在 `miniprogram/constants/config.js` 中配置
+- 📖 功能测试：配置API密钥后即可测试
 
 ---
 
@@ -152,20 +150,22 @@ FoodAI/
 │   │   ├── profile/        # 个人中心
 │   │   └── recipe/         # 食谱页
 │   ├── services/           # 服务层
-│   │   ├── ai-service.js   # AI识别服务
+│   │   ├── ai-service.js   # AI识别服务（主入口）
 │   │   ├── deepseek-service.js  # Deepseek AI服务
 │   │   ├── data-service.js # 数据服务
 │   │   ├── pay-service.js  # 支付服务
 │   │   └── recipe-service.js    # 食谱服务
 │   ├── components/         # 组件
+│   │   ├── food-card/      # 食物卡片
+│   │   ├── nutrition-chart/# 营养图表
+│   │   └── pay-wall/       # 付费墙
 │   ├── utils/              # 工具函数
+│   │   ├── api.js          # API请求
+│   │   ├── auth.js         # 认证工具
+│   │   └── image.js        # 图片处理
 │   └── constants/          # 配置文件
-├── cloudfunctions/         # 云函数
-│   ├── baidu-ai/          # 百度AI代理
-│   ├── create-order/      # 创建订单
-│   └── payment-callback/  # 支付回调
-├── tencent-scf/           # 腾讯云函数
-└── scripts/               # 脚本工具
+├── CONFIGURATION.md        # 简化配置指南
+└── 未完成功能.md           # 功能完成度报告
 ```
 
 ---

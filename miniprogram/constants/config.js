@@ -188,7 +188,8 @@ const config = {
       enabled: true,
       requireVip: false, // 免费用户每日限制次数
       dailyLimit: 10, // 每日免费次数
-      vipDailyLimit: 100 // VIP每日次数
+      vipDailyLimit: 100, // VIP每日次数
+      useSecureMode: true // 是否使用安全模式（云函数保护API密钥）
     },
     
     // 营养分析功能
@@ -222,9 +223,9 @@ const config = {
 
   // 云开发配置
   cloud: {
-    env: 'foodai-prod-xxx', // 云环境ID，请替换为您的实际环境ID
+    env: 'cloud1-9g3r4c7s10dc06ca', // 云环境ID，请替换为您的实际环境ID
     traceUser: true, // 是否记录用户访问
-    resourceEnv: 'foodai-prod-xxx' // 资源环境ID
+    resourceEnv: 'cloud1-9g3r4c7s10dc06ca' // 资源环境ID
   },
 
   // 腾讯云函数配置（个人认证替代方案）

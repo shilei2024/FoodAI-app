@@ -4,11 +4,15 @@ const api = require('../utils/api.js');
 const imageUtils = require('../utils/image.js');
 const dataService = require('./data-service.js');
 const deepseekService = require('./deepseek-service.js');
+const secureAIService = require('./secure-ai-service.js');
 
 /**
  * AI服务类
- * 直接调用百度AI API（不依赖云函数）
- * 注意：API Key和Secret Key会暴露在小程序代码中，建议在生产环境中使用云函数
+ * 支持两种模式：
+ * 1. 直接调用模式（开发环境，API密钥暴露）
+ * 2. 云函数模式（生产环境，API密钥受保护）
+ * 
+ * 注意：生产环境强烈建议使用云函数模式保护API密钥
  */
 class AIService {
   constructor() {
@@ -17,10 +21,31 @@ class AIService {
     this.api = api;
     this.imageUtils = imageUtils;
     this.deepseekService = deepseekService;
-    // 使用Deepseek API模式
+    this.secureAIService = secureAIService;
+    
+    // 配置运行模式
+    this.useSecureMode = this.shouldUseSecureMode();
     this.useDeepseekAPI = true;
-    // 直接调用模式（不使用云函数）
-    this.useDirectCall = true;
+    
+    console.log(`AI服务模式: ${this.useSecureMode ? '安全模式（云函数）' : '直接调用模式'}`);
+  }
+  
+  /**
+   * 判断是否使用安全模式
+   * @returns {boolean} 是否使用安全模式
+   */
+  shouldUseSecureMode() {
+    // 根据配置决定使用哪种模式
+    // 生产环境建议使用安全模式
+    const env = config.debug.enabled ? 'development' : 'production';
+    
+    // 如果有云环境配置，优先使用安全模式
+    if (config.cloud && config.cloud.env) {
+      return true;
+    }
+    
+    // 开发环境可以使用直接调用模式
+    return env === 'production';
   }
 
   /**
@@ -30,6 +55,28 @@ class AIService {
    * @returns {Promise} Promise对象
    */
   async recognizeFood(imagePath, options = {}) {
+    try {
+      // 根据模式选择不同的实现
+      if (this.useSecureMode) {
+        // 安全模式：使用云函数
+        return await this.secureAIService.recognizeFood(imagePath, options);
+      } else {
+        // 直接调用模式
+        return await this.recognizeFoodDirect(imagePath, options);
+      }
+    } catch (error) {
+      console.error('识别食物图片失败:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 直接调用模式识别食物图片
+   * @param {string} imagePath 图片路径
+   * @param {Object} options 选项
+   * @returns {Promise} Promise对象
+   */
+  async recognizeFoodDirect(imagePath, options = {}) {
     try {
       // 1. 压缩图片（如果需要）
       let processedImage = imagePath;
@@ -185,6 +232,32 @@ class AIService {
    */
   async searchFoodByName(foodName, options = {}) {
     try {
+      // 根据模式选择不同的实现
+      if (this.useSecureMode) {
+        // 安全模式：使用云函数
+        return await this.secureAIService.searchFood(foodName, options);
+      } else {
+        // 直接调用模式
+        return await this.searchFoodDirect(foodName, options);
+      }
+    } catch (error) {
+      console.error('搜索食物失败:', error);
+      return {
+        success: false,
+        error: error.message,
+        code: error.code || -1
+      };
+    }
+  }
+  
+  /**
+   * 直接调用模式搜索食物
+   * @param {string} foodName 食物名称
+   * @param {Object} options 选项
+   * @returns {Promise} Promise对象
+   */
+  async searchFoodDirect(foodName, options = {}) {
+    try {
       let searchResult;
       
       // 根据配置选择AI服务
@@ -218,11 +291,7 @@ class AIService {
       
     } catch (error) {
       console.error('搜索食物失败:', error);
-      return {
-        success: false,
-        error: error.message,
-        code: error.code || -1
-      };
+      throw error;
     }
   }
 
@@ -507,6 +576,78 @@ class AIService {
     
     return nutrition;
   }
+  
+  /**
+   * 健康检查
+   * @returns {Promise<Object>} 健康状态
+   */
+  async healthCheck() {
+    try {
+      if (this.useSecureMode) {
+        return await this.secureAIService.healthCheck();
+      } else {
+        // 直接调用模式的健康检查
+        const hasDeepseekKey = !!this.deepseekAI.apiKey && this.deepseekAI.apiKey !== '';
+        const hasBaiduKey = !!this.baiduAI.apiKey && this.baiduAI.apiKey !== '';
+        
+        return {
+          success: true,
+          data: {
+            mode: 'direct',
+            deepseekConfigured: hasDeepseekKey,
+            baiduConfigured: hasBaiduKey,
+            timestamp: Date.now()
+          }
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  
+  /**
+   * 获取使用统计
+   * @returns {Promise<Object>} 使用统计
+   */
+  async getUsageStats() {
+    try {
+      if (this.useSecureMode) {
+        return await this.secureAIService.getUsageStats();
+      } else {
+        // 直接调用模式的使用统计
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // 这里可以添加本地使用统计逻辑
+        return {
+          success: true,
+          data: {
+            mode: 'direct',
+            todayCount: 0, // 需要实现本地统计
+            totalCount: 0,
+            timestamp: Date.now()
+          }
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  
+  /**
+   * 切换运行模式（用于测试）
+   * @param {boolean} useSecureMode 是否使用安全模式
+   */
+  setMode(useSecureMode) {
+    this.useSecureMode = useSecureMode;
+    console.log(`AI服务模式已切换为: ${this.useSecureMode ? '安全模式（云函数）' : '直接调用模式'}`);
+  }
 }
 
 // 创建实例
@@ -529,6 +670,11 @@ module.exports = {
   // 工具方法（内置营养数据库）
   getBuiltInNutritionInfo: (foodName) => aiService.getBuiltInNutritionInfo(foodName),
   getDefaultNutritionInfo: () => aiService.getDefaultNutritionInfo(),
+  
+  // 安全功能
+  healthCheck: () => aiService.healthCheck(),
+  getUsageStats: () => aiService.getUsageStats(),
+  setMode: (useSecureMode) => aiService.setMode(useSecureMode),
   
   // 实例
   service: aiService
