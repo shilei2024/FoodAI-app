@@ -79,7 +79,7 @@ App({
       if (wx.cloud) {
         // 初始化云开发
         wx.cloud.init({
-          env: 'foodai-prod-xxx', // 云环境ID，请替换为您的实际环境ID
+          env: 'cloud1-9g3r4c7s10dc06ca', // 云环境ID，请替换为您的实际环境ID
           traceUser: true // 记录用户访问
         })
         console.log('云开发初始化成功')

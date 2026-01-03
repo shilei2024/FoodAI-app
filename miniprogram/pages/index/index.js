@@ -3,7 +3,10 @@ const app = getApp()
 const Toast = require('../../miniprogram_npm/vant-weapp/toast/toast')
 const Dialog = require('../../miniprogram_npm/vant-weapp/dialog/dialog')
 const imageProcessor = require('../../utils/imageProcessor.js')
-const ImagePaths = require('../../utils/imagePaths.js')
+const ImagePaths = {
+  getDefaultFood: () => '/images/default-food.png',
+  getShareCover: () => '/images/default-food.png'
+}
 const services = require('../../services/index.js')
 const aiService = services.getAIService()
 
@@ -197,8 +200,11 @@ Page({
       })
       loadingShown = true
       
+      // 获取图片路径（适配新的chooseImage返回格式）
+      const imagePath = processResult.files && processResult.files[0] ? processResult.files[0].path : processResult
+      
       // 调用真实的AI识别服务
-      const recognitionResult = await aiService.recognizeFood(processResult.finalPath, {
+      const recognitionResult = await aiService.recognizeFood(imagePath, {
         compress: false, // 已经压缩过了
         getNutrition: true,
         saveRecord: true,
@@ -208,7 +214,7 @@ Page({
       
       if (recognitionResult.success) {
         // 显示识别结果
-        this.showRecognitionResult(processResult.finalPath, processResult, recognitionResult.data)
+        this.showRecognitionResult(imagePath, processResult, recognitionResult.data)
         wx.showToast({
           title: '识别成功！',
           icon: 'success',
@@ -329,8 +335,19 @@ Page({
   // 显示识别结果
   showRecognitionResult(imagePath, processResult = null, aiResult = null) {
     // 如果有处理结果，使用处理后的信息
-    const imageInfo = processResult?.info || {}
-    const fileSize = processResult?.finalSize || 0
+    let imageInfo = {}
+    let fileSize = 0
+    
+    if (processResult && processResult.files && processResult.files[0]) {
+      const file = processResult.files[0]
+      imageInfo = {
+        width: file.width || 0,
+        height: file.height || 0
+      }
+      fileSize = file.size || 0
+    } else if (processResult && processResult.finalSize) {
+      fileSize = processResult.finalSize
+    }
     
     let resultData
     
@@ -789,7 +806,7 @@ Page({
     const newRecord = {
       name: foodName,
       time: this.formatTime(new Date()),
-      imageUrl: imageUrl || ImagePaths.getDefaultFood()
+      imageUrl: imageUrl || '/images/default-food.png'
     }
     
     const recentHistory = [newRecord, ...this.data.recentHistory.slice(0, 2)]
@@ -904,7 +921,7 @@ Page({
       const recentHistory = records.slice(0, 3).map(record => ({
         name: record.foodName || '未知食物',
         time: this.formatTime(new Date(record.createTime || record.timestamp)),
-        imageUrl: record.imageUrl || ImagePaths.getDefaultFood()
+        imageUrl: record.imageUrl || '/images/default-food.png'
       }))
       
       this.setData({ recentHistory })
@@ -1025,14 +1042,14 @@ Page({
         
         // 直接处理图片
         const result = {
-          originalPath: imageFile.tempFilePath,
-          originalSize: imageFile.size,
-          width: imageFile.width,
-          height: imageFile.height,
-          type: imageFile.fileType,
-          processed: false,
-          finalPath: imageFile.tempFilePath,
-          finalSize: imageFile.size
+          files: [{
+            path: imageFile.tempFilePath,
+            size: imageFile.size,
+            width: imageFile.width,
+            height: imageFile.height,
+            type: imageFile.fileType
+          }],
+          processed: false
         }
         
         await this.handleProcessedImage(result)
@@ -1133,12 +1150,145 @@ Page({
     }
   },
 
+  // 测试百度AI API
+  async testBaiduAIAPI() {
+    try {
+      this.setData({ loading: true })
+      
+      wx.showLoading({
+        title: '测试百度AI API...',
+        mask: true
+      })
+      
+      // 获取AI服务
+      const aiService = require('../../services/ai-service.js')
+      
+      // 测试百度AI连接
+      const connectionResult = await aiService.testBaiduAIConnection()
+      
+      wx.hideLoading()
+      
+      if (connectionResult.success) {
+        // 获取服务状态
+        const serviceStatus = aiService.getServiceStatus()
+        
+        // 显示测试结果
+        wx.showModal({
+          title: '百度AI API测试成功',
+          content: `API连接成功！
+          
+百度AI配置状态:
+- API Key: ${serviceStatus.baiduAI.apiKey}
+- Secret Key: ${serviceStatus.baiduAI.secretKey}
+- 服务启用: ${serviceStatus.baiduAI.enabled ? '是' : '否'}
+
+当前AI服务: ${serviceStatus.currentService}
+安全模式: ${serviceStatus.secureMode ? '是' : '否'}
+
+测试时间: ${new Date(connectionResult.timestamp).toLocaleString()}`,
+          showCancel: false,
+          confirmText: '好的'
+        })
+        
+      } else {
+        wx.showModal({
+          title: '百度AI API测试失败',
+          content: `错误: ${connectionResult.error || '未知错误'}
+          
+请检查:
+1. API密钥是否正确配置
+2. Secret Key是否正确配置
+3. 网络连接是否正常
+4. 百度AI服务是否可用
+
+配置位置: miniprogram/constants/config.js
+需要配置: baiduAI.apiKey 和 baiduAI.secretKey`,
+          showCancel: false,
+          confirmText: '知道了'
+        })
+      }
+      
+    } catch (error) {
+      wx.hideLoading()
+      
+      wx.showModal({
+        title: '测试异常',
+        content: `异常信息: ${error.message}
+        
+可能的原因:
+1. API密钥配置错误
+2. 网络请求超时
+3. 代码逻辑错误`,
+        showCancel: false,
+        confirmText: '关闭'
+      })
+      
+      console.error('百度AI API测试异常:', error)
+      
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 切换AI服务
+  async switchAIService() {
+    try {
+      const aiService = require('../../services/ai-service.js')
+      const serviceStatus = aiService.getServiceStatus()
+      
+      const currentService = serviceStatus.currentService
+      const newService = currentService === '百度AI' ? 'Deepseek API' : '百度AI'
+      
+      wx.showActionSheet({
+        itemList: [`切换到${newService}`, '取消'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            aiService.setAIService(newService === '百度AI' ? 'baidu' : 'deepseek')
+            
+            wx.showToast({
+              title: `已切换到${newService}`,
+              icon: 'success',
+              duration: 2000
+            })
+            
+            // 显示新的服务状态
+            setTimeout(() => {
+              const newStatus = aiService.getServiceStatus()
+              wx.showModal({
+                title: 'AI服务状态',
+                content: `当前AI服务: ${newStatus.currentService}
+                
+百度AI:
+- 配置: ${newStatus.baiduAI.configured ? '已配置' : '未配置'}
+- 启用: ${newStatus.baiduAI.enabled ? '是' : '否'}
+
+Deepseek API:
+- 配置: ${newStatus.deepseekAI.configured ? '已配置' : '未配置'}
+- 启用: ${newStatus.deepseekAI.enabled ? '是' : '否'}`,
+                showCancel: false,
+                confirmText: '好的'
+              })
+            }, 500)
+          }
+        }
+      })
+      
+    } catch (error) {
+      console.error('切换AI服务失败:', error)
+      wx.showToast({
+        title: '切换失败: ' + error.message,
+        icon: 'none',
+        duration: 3000
+      })
+    }
+  },
+
   // 页面分享
   onShareAppMessage() {
     return {
       title: 'AI轻食记 - 智能食物识别',
       path: '/pages/index/index',
-      imageUrl: ImagePaths.getShareCover()
+      imageUrl: '/images/default-food.png'
     }
   }
 })

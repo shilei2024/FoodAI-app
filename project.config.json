@@ -52,7 +52,6 @@
   "libVersion": "3.13.0",
   "appid": "wx38dee0ea03214271",
   "projectname": "AI轻食记",
-  "isGameTourist": false,
   "condition": {
     "search": {
       "list": []
@@ -113,5 +112,6 @@
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "srcMiniprogramRoot": "miniprogram/"
 }

@@ -41,7 +41,7 @@
         <view class="search-btn-wrapper">
           <van-button 
             type="primary" 
-            size="samll" 
+            size="small" 
             bindtap="searchFood"
             custom-class="search-btn"
           >
