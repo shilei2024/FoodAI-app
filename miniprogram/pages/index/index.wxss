@@ -669,3 +669,169 @@
     padding: 10rpx 20rpx;
   }
 }
+
+/* 用户状态区域样式 */
+.user-status-section {
+  padding: 0 40rpx;
+  margin-top: -20rpx;
+  margin-bottom: 40rpx;
+}
+
+.user-status-card {
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  border: 2rpx solid #07c160;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.user-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-right: 12rpx;
+}
+
+.status-tag {
+  border-radius: 12rpx !important;
+  padding: 4rpx 12rpx !important;
+}
+
+.user-status-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.user-actions {
+  margin-left: auto;
+}
+
+.user-action-btn {
+  border-radius: 16rpx !important;
+  padding: 0 24rpx !important;
+  height: 56rpx !important;
+}
+
+.usage-stats {
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.usage-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.usage-item:last-child {
+  margin-bottom: 0;
+}
+
+.usage-label {
+  font-size: 28rpx;
+  color: #333;
+  margin-left: 12rpx;
+  margin-right: auto;
+}
+
+.usage-count {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #07c160;
+  margin-right: 12rpx;
+}
+
+.usage-remaining {
+  font-size: 24rpx;
+  color: #07c160;
+  background: #f0f9f4;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.usage-remaining.zero {
+  color: #ff976a;
+  background: #fff2f0;
+}
+
+.guest-notice {
+  background: #fff2f0;
+  border: 1rpx solid #ff976a;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  display: flex;
+  align-items: center;
+}
+
+.notice-text {
+  font-size: 24rpx;
+  color: #ff976a;
+  margin-left: 8rpx;
+  line-height: 1.4;
+}
+
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .user-status-section {
+    padding: 0 32rpx;
+  }
+  
+  .user-status-card {
+    padding: 24rpx;
+  }
+  
+  .user-avatar {
+    width: 70rpx;
+    height: 70rpx;
+  }
+  
+  .user-name {
+    font-size: 28rpx;
+  }
+  
+  .usage-label,
+  .usage-count {
+    font-size: 24rpx;
+  }
+}
+
+@media (min-width: 414px) {
+  .user-avatar {
+    width: 90rpx;
+    height: 90rpx;
+  }
+  
+  .user-name {
+    font-size: 34rpx;
+  }
+  
+  .usage-label,
+  .usage-count {
+    font-size: 30rpx;
+  }
+}

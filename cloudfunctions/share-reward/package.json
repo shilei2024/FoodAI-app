@@ -1,0 +1,14 @@
+{
+  "name": "share-reward",
+  "version": "1.0.0",
+  "description": "分享奖励系统云函数",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  },
+  "author": "FoodAI Team",
+  "license": "MIT"
+}

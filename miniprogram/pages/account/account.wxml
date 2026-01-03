@@ -1,0 +1,69 @@
+<!--pages/account/account.wxml-->
+<view class="container">
+  <!-- 头部 -->
+  <view class="header">
+    <van-icon name="arrow-left" size="24" bindtap="goBack" />
+    <text class="header-title">账号管理</text>
+    <view style="width: 24rpx;"></view> <!-- 占位 -->
+  </view>
+
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-header">
+      <image 
+        class="user-avatar" 
+        src="{{userInfo.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&auto=format'}}" 
+        mode="aspectFill"
+      ></image>
+      <view class="user-info">
+        <text class="user-name">{{userInfo.nickName || '轻食记用户'}}</text>
+        <text class="user-id">ID: {{userInfo.openId || 'guest'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 账号信息 -->
+  <view class="section">
+    <view class="section-title">
+      <van-icon name="user-o" size="18" />
+      <text>账号信息</text>
+    </view>
+    <van-cell-group>
+      <van-cell title="手机号" value="{{accountInfo.phone}}" />
+      <van-cell title="邮箱" value="{{accountInfo.email}}" />
+      <van-cell title="微信绑定" value="{{accountInfo.wechatBound ? '已绑定' : '未绑定'}}" />
+      <van-cell title="最后登录" value="{{accountInfo.lastLoginTime}}" />
+      <van-cell title="注册时间" value="{{accountInfo.registerTime}}" />
+    </van-cell-group>
+  </view>
+
+  <!-- 安全设置 -->
+  <view class="section">
+    <view class="section-title">
+      <van-icon name="shield-o" size="18" />
+      <text>安全设置</text>
+    </view>
+    <van-cell-group>
+      <van-cell 
+        wx:for="{{securitySettings}}" 
+        wx:key="id"
+        title="{{item.title}}"
+        label="{{item.desc}}"
+        icon="{{item.icon}}"
+        is-link="{{item.enabled}}"
+        disabled="{{!item.enabled}}"
+        bindtap="handleSecuritySetting"
+        data-id="{{item.id}}"
+      />
+    </van-cell-group>
+  </view>
+
+  <!-- 操作提示 -->
+  <view class="tips">
+    <text class="tip-title">安全提示：</text>
+    <text class="tip-content">• 定期修改密码可提高账号安全性</text>
+    <text class="tip-content">• 绑定手机和邮箱便于找回密码</text>
+    <text class="tip-content">• 不要在公共设备上保持登录状态</text>
+    <text class="tip-content">• 如发现异常登录，请立即修改密码</text>
+  </view>
+</view>

@@ -47,6 +47,12 @@ class AIService {
   shouldUseSecureMode() {
     // 根据配置决定使用哪种模式
     // 生产环境建议使用安全模式
+    
+    // 临时解决方案：强制使用直接调用模式，避免云函数问题
+    // 如果您想使用云函数，请注释掉下面这行
+    return false;
+    
+    /*
     const env = config.debug.enabled ? 'development' : 'production';
     
     // 如果有云环境配置，优先使用安全模式
@@ -56,6 +62,7 @@ class AIService {
     
     // 开发环境可以使用直接调用模式
     return env === 'production';
+    */
   }
 
   /**
@@ -100,29 +107,46 @@ class AIService {
       }
 
       let recognitionResult;
+      let usedService = '';
       
-      // 2. 根据配置选择AI服务
+      // 2. 拍照功能只能使用百度AI进行食物识别，不允许降级
       if (this.useBaiduAI) {
-        // 使用百度AI API
-        console.log('使用百度AI进行食物识别');
-        recognitionResult = await this.recognizeFoodWithBaidu(processedImage, options);
-      } else if (this.useDeepseekAPI) {
-        // 使用Deepseek API
-        console.log('使用Deepseek API进行食物识别');
-        recognitionResult = await this.recognizeFoodWithDeepseek(processedImage, options);
+        try {
+          // 必须使用百度AI API进行食物识别
+          console.log('使用百度AI进行食物识别');
+          recognitionResult = await this.recognizeFoodWithBaidu(processedImage, options);
+          usedService = 'baidu';
+        } catch (baiduError) {
+          console.error('百度AI识别失败:', baiduError.message);
+          // 不允许降级到Deepseek进行图片识别
+          throw new Error(`百度AI识别失败：${baiduError.message}`);
+        }
       } else {
-        // 降级到内置数据库
-        throw new Error('未配置任何AI服务，请配置百度AI或Deepseek API密钥');
+        // 如果没有配置百度AI，不能进行拍照识别
+        throw new Error('拍照功能需要配置百度AI API密钥');
       }
 
       // 3. 解析识别结果
       const parsedResult = this.parseRecognitionResult(recognitionResult, options);
 
-      // 4. 获取营养信息（如果需要）
+      // 4. 获取完整的食物分析（如果需要）- 使用统一的Deepseek分析
       if (options.getNutrition !== false) {
-        const source = this.useBaiduAI ? 'baidu_ai' : 'deepseek';
-        const nutritionInfo = await this.getNutritionInfo(parsedResult.foodName, parsedResult.nutrition, source);
-        parsedResult.nutrition = nutritionInfo;
+        console.log('拍照识别：使用统一的Deepseek完整分析:', parsedResult.foodName);
+        const deepseekAnalysis = await this.getUnifiedFoodAnalysisFromDeepseek(parsedResult.foodName, 'photo');
+        
+        // 使用Deepseek的详细描述替换百度AI的简单描述
+        if (deepseekAnalysis.description && deepseekAnalysis.description.length > 50) {
+          parsedResult.description = deepseekAnalysis.description;
+        }
+        
+        // 更新营养信息
+        parsedResult.nutrition = deepseekAnalysis.nutrition || {};
+        parsedResult.calorie = deepseekAnalysis.calorie || parsedResult.calorie;
+        
+        // 更新健康评分和建议
+        parsedResult.healthScore = deepseekAnalysis.healthScore || 70;
+        parsedResult.suggestions = deepseekAnalysis.suggestions || ['均衡饮食，多样化摄入'];
+        parsedResult.tags = deepseekAnalysis.tags || ['百度AI识别', 'Deepseek详细分析'];
       }
 
       // 5. 保存识别记录（如果需要）
@@ -212,7 +236,8 @@ class AIService {
       // 百度AI返回的数据格式
       const baiduResult = recognitionResult.data;
       
-      // 转换为统一的格式
+      // 转换为统一的格式，标记为拍照识别
+      // 注意：百度AI的描述可能很简单，后续会用Deepseek的详细描述替换
       const unifiedResult = {
         result: [
           {
@@ -221,7 +246,7 @@ class AIService {
             calorie: baiduResult.calorie,
             has_calorie: baiduResult.hasCalorie,
             baike_info: {
-              description: baiduResult.description,
+              description: baiduResult.description || `这是${baiduResult.foodName}，具体信息将由AI分析提供。`,
               image_url: baiduResult.baikeImageUrl
             }
           }
@@ -231,7 +256,10 @@ class AIService {
         // 百度AI不直接提供健康评分和建议，使用默认值
         healthScore: 70,
         suggestions: ['均衡饮食，多样化摄入'],
-        tags: ['百度AI识别']
+        tags: ['百度AI识别'],
+        searchType: 'photo', // 标记为拍照识别
+        // 保存百度AI的原始信息，供后续使用
+        baiduOriginalData: baiduResult
       };
       
       return unifiedResult;
@@ -266,38 +294,34 @@ class AIService {
 
     const firstResult = recognitionResult.result[0];
     
-    // 确定来源
-    const source = recognitionResult.tags?.includes('百度AI识别') ? 'baidu_ai' : 'deepseek_ai';
+    // 根据选项确定来源和搜索类型
+    const isPhotoRecognition = options.searchType === 'photo' || recognitionResult.searchType === 'photo';
+    const source = isPhotoRecognition ? 'baidu_ai' : 'deepseek_search';
+    const searchType = isPhotoRecognition ? 'photo' : 'text';
     
     // 基础信息
+    // 优先使用Deepseek的详细描述，如果没有则使用百度AI的描述
+    const description = recognitionResult.deepseekDescription || 
+                       firstResult.baike_info?.description || 
+                       '暂无描述';
+    
     const result = {
       foodName: firstResult.name || '未知食物',
-      description: firstResult.baike_info?.description || '暂无描述',
+      description: description,
       calorie: firstResult.calorie || 0,
       confidence: firstResult.probability || 0,
       imageUrl: firstResult.baike_info?.image_url || '',
-      searchType: 'photo',
-      source: source
+      searchType: searchType,
+      source: source,
+      // 百度AI特有字段（仅拍照识别时设置）
+      hasCalorie: isPhotoRecognition ? (firstResult.has_calorie || false) : false,
+      baikeUrl: isPhotoRecognition ? (firstResult.baike_info?.baike_url || '') : '',
+      // 使用传入的营养信息（如果已提供）
+      nutrition: recognitionResult.nutrition || {},
+      healthScore: recognitionResult.healthScore || 70,
+      suggestions: recognitionResult.suggestions || ['均衡饮食，多样化摄入'],
+      tags: recognitionResult.tags || (isPhotoRecognition ? ['百度AI识别'] : ['文字搜索'])
     };
-    
-    // 处理百度AI特有的字段
-    if (source === 'baidu_ai') {
-      result.hasCalorie = firstResult.has_calorie || false;
-      result.baikeUrl = firstResult.baike_info?.baike_url || '';
-      
-      // 百度AI不直接提供营养信息，使用默认值
-      result.nutrition = recognitionResult.nutrition || {};
-      result.healthScore = recognitionResult.healthScore || 70;
-      result.suggestions = recognitionResult.suggestions || ['均衡饮食，多样化摄入'];
-      result.tags = recognitionResult.tags || ['百度AI识别'];
-      
-    } else {
-      // Deepseek AI的结果
-      result.nutrition = recognitionResult.nutrition || {};
-      result.healthScore = recognitionResult.healthScore || 70;
-      result.suggestions = recognitionResult.suggestions || [];
-      result.tags = recognitionResult.tags || [];
-    }
     
     return result;
   }
@@ -338,29 +362,86 @@ class AIService {
     try {
       let searchResult;
       
-      // 根据配置选择AI服务
-      if (this.useBaiduAI) {
-        // 使用百度AI搜索
-        console.log('使用百度AI搜索食物');
-        searchResult = await this.searchFoodByText(foodName, options);
-      } else if (this.useDeepseekAPI) {
-        // 使用Deepseek API搜索
-        console.log('使用Deepseek API搜索食物');
-        searchResult = await this.searchFoodWithDeepseek(foodName, options);
+      // 搜索功能直接使用Deepseek API，不使用百度AI
+      if (this.useDeepseekAPI) {
+        // 使用Deepseek API搜索，获取完整结果（包含营养信息）
+        console.log('文字搜索：使用Deepseek API获取完整食物信息');
+        const deepseekResult = await this.deepseekService.searchFoodInfo(foodName, {
+          getNutrition: true,
+        // 使用统一的提示词确保一致性
+        systemPrompt: `你是一个专业的营养师和食物专家。请详细分析以下食物：
+
+食物名称：${foodName}
+
+请提供以下完整信息：
+1. 食物详细描述（100-200字，包括外观、口感、制作方法等）
+2. 基础营养信息（每100克含量）
+3. 健康评分（0-100分，基于营养价值和健康影响）
+4. 食用建议（3-5条具体建议）
+5. 相关标签（3-5个关键词）
+
+请严格按照JSON格式返回：
+{
+  "foodName": "${foodName}",
+  "description": "详细的食物描述...",
+  "calorie": 数值,
+  "nutrition": {
+    "protein": 数值,
+    "fat": 数值,
+    "carbohydrate": 数值,
+    "fiber": 数值,
+    "vitamin": 数值,
+    "mineral": 数值,
+    "calcium": 数值,
+    "iron": 数值,
+    "zinc": 数值
+  },
+  "healthScore": 数值,
+  "suggestions": ["具体建议1", "具体建议2", "具体建议3"],
+  "tags": ["标签1", "标签2", "标签3"]
+}`
+        });
+        
+        if (!deepseekResult.success) {
+          throw new Error(deepseekResult.error || 'Deepseek API搜索失败');
+        }
+        
+        // 转换为统一的格式，使用Deepseek的完整描述
+        searchResult = {
+          result: [
+            {
+              name: deepseekResult.data.foodName || foodName,
+              probability: deepseekResult.data.confidence || 0.9,
+              calorie: deepseekResult.data.calorie || 0,
+              has_calorie: !!(deepseekResult.data.calorie),
+              baike_info: {
+                description: deepseekResult.data.description || `这是${foodName}，具体信息将由AI分析提供。`,
+                image_url: ''
+              }
+            }
+          ],
+          nutrition: deepseekResult.data.nutrition || {},
+          healthScore: deepseekResult.data.healthScore || 70,
+          suggestions: deepseekResult.data.suggestions || ['均衡饮食，多样化摄入'],
+          tags: ['文字搜索', 'Deepseek详细分析'],
+          searchType: 'text',
+          // 保存Deepseek的完整描述
+          deepseekDescription: deepseekResult.data.description
+        };
       } else {
-        // 降级到内置数据库
-        throw new Error('未配置任何AI服务，请配置百度AI或Deepseek API密钥');
+        // 如果没有配置Deepseek，使用内置数据库
+        console.log('Deepseek API未配置，使用内置营养数据库搜索');
+        searchResult = await this.searchFoodByText(foodName, options);
       }
       
       // 解析识别结果
       const parsedResult = this.parseRecognitionResult(searchResult, options);
       
-      // 获取营养信息（如果需要）
-      if (options.getNutrition !== false) {
-        const source = this.useBaiduAI ? 'baidu_ai' : 'deepseek';
-        const nutritionInfo = await this.getNutritionInfo(parsedResult.foodName, parsedResult.nutrition, source);
-        parsedResult.nutrition = nutritionInfo;
-      }
+      // 使用Deepseek返回的营养信息
+      parsedResult.nutrition = searchResult.nutrition || {};
+      parsedResult.healthScore = searchResult.healthScore || 70;
+      parsedResult.suggestions = searchResult.suggestions || ['均衡饮食，多样化摄入'];
+      parsedResult.tags = searchResult.tags || ['文字搜索', '内置数据库'];
       
       // 保存搜索记录（如果需要）
       if (options.saveRecord !== false) {
@@ -394,7 +475,7 @@ class AIService {
         throw new Error(searchResult.error || 'Deepseek API搜索失败');
       }
       
-      // 转换为与百度AI相似的格式
+      // 转换为与百度AI相似的格式，并标记为文字搜索
       const deepseekResult = {
         result: [
           {
@@ -411,7 +492,8 @@ class AIService {
         nutrition: searchResult.data.nutrition,
         healthScore: searchResult.data.healthScore,
         suggestions: searchResult.data.suggestions,
-        tags: searchResult.data.tags
+        tags: searchResult.data.tags,
+        searchType: 'text' // 标记为文字搜索
       };
       
       return deepseekResult;
@@ -423,40 +505,163 @@ class AIService {
   }
 
   /**
-   * 使用百度AI搜索食物
+   * 使用内置数据库搜索食物（降级方案）
    * @param {string} foodName 食物名称
    * @param {Object} options 选项
    * @returns {Promise} Promise对象
    */
   async searchFoodByText(foodName, options = {}) {
     try {
-      console.log('使用百度AI搜索食物:', foodName);
+      console.log('使用内置数据库搜索食物:', foodName);
       
-      // 百度AI没有专门的文字搜索API，我们可以使用通用物体识别
-      // 或者直接返回一个模拟结果，然后使用Deepseek获取营养信息
+      // 从内置营养数据库获取信息
+      const nutritionInfo = this.getBuiltInNutritionInfo(foodName);
       
-      // 这里我们创建一个模拟的百度AI格式结果
-      const mockBaiduResult = {
+      // 创建模拟结果，标记为文字搜索
+      const mockResult = {
         result: [
           {
             name: foodName,
-            probability: 0.9,
-            calorie: 0, // 需要后续获取
-            has_calorie: false,
+            probability: 0.8,
+            calorie: nutritionInfo.calories || 0,
+            has_calorie: !!(nutritionInfo.calories),
             baike_info: {
-              description: `这是${foodName}，具体营养信息请参考专业数据库。`,
+              description: `这是${foodName}，营养信息来自内置数据库。`,
               image_url: ''
             }
           }
-        ]
+        ],
+        nutrition: nutritionInfo,
+        searchType: 'text' // 标记为文字搜索
       };
       
-      return mockBaiduResult;
+      return mockResult;
       
     } catch (error) {
-      console.error('百度AI搜索失败:', error);
-      throw new Error('百度AI搜索功能暂时不可用，请使用Deepseek API或内置数据库');
+      console.error('内置数据库搜索失败:', error);
+      throw new Error('搜索功能暂时不可用');
     }
+  }
+
+  /**
+   * 统一的Deepseek食物分析方法（用于拍照识别和文字搜索）
+   * @param {string} foodName 食物名称
+   * @param {string} sourceType 来源类型：'photo' 或 'text'
+   * @returns {Promise} Promise对象
+   */
+  async getUnifiedFoodAnalysisFromDeepseek(foodName, sourceType = 'text') {
+    try {
+      if (!this.useDeepseekAPI) {
+        console.warn('Deepseek API未配置，使用内置营养数据库');
+        const nutritionInfo = this.getBuiltInNutritionInfo(foodName);
+        return {
+          nutrition: nutritionInfo,
+          description: `这是${foodName}，营养信息来自内置数据库。`,
+          healthScore: 70,
+          suggestions: ['均衡饮食，多样化摄入'],
+          tags: sourceType === 'photo' 
+            ? ['百度AI识别', '内置数据库'] 
+            : ['文字搜索', '内置数据库']
+        };
+      }
+      
+      console.log(`调用Deepseek API获取完整食物分析[${sourceType}]:`, foodName);
+      
+      // 统一的Deepseek调用，确保一致的食物分析
+      const searchResult = await this.deepseekService.searchFoodInfo(foodName, {
+        getNutrition: true,
+        // 增强的提示词，要求详细的描述和完整的分析
+        systemPrompt: `你是一个专业的营养师和食物专家。请详细分析以下食物：
+
+食物名称：${foodName}
+
+请提供以下完整信息：
+1. 食物详细描述（100-200字，包括外观、口感、制作方法等）
+2. 基础营养信息（每100克含量）
+3. 健康评分（0-100分，基于营养价值和健康影响）
+4. 食用建议（3-5条具体建议）
+5. 相关标签（3-5个关键词）
+
+请严格按照JSON格式返回：
+{
+  "foodName": "${foodName}",
+  "description": "详细的食物描述...",
+  "calorie": 数值,
+  "nutrition": {
+    "protein": 数值,
+    "fat": 数值,
+    "carbohydrate": 数值,
+    "fiber": 数值,
+    "vitamin": 数值,
+    "mineral": 数值,
+    "calcium": 数值,
+    "iron": 数值,
+    "zinc": 数值
+  },
+  "healthScore": 数值,
+  "suggestions": ["具体建议1", "具体建议2", "具体建议3"],
+  "tags": ["标签1", "标签2", "标签3"]
+}`
+      });
+      
+      if (searchResult.success && searchResult.data) {
+        const data = searchResult.data;
+        return {
+          // 完整的食物信息
+          description: data.description || `这是${foodName}，一种常见的食物。`,
+          calorie: data.calorie || 0,
+          // 基础营养信息
+          nutrition: {
+            protein: data.nutrition?.protein || 0,
+            fat: data.nutrition?.fat || 0,
+            carbohydrate: data.nutrition?.carbohydrate || 0,
+            fiber: data.nutrition?.fiber || 0,
+            vitamin: data.nutrition?.vitamin || 0,
+            mineral: data.nutrition?.mineral || 0,
+            calcium: data.nutrition?.calcium || 0,
+            iron: data.nutrition?.iron || 0,
+            zinc: data.nutrition?.zinc || 0,
+            // 其他可能存在的营养信息
+            water: data.nutrition?.water || 0,
+            sugar: data.nutrition?.sugar || 0,
+            cholesterol: data.nutrition?.cholesterol || 0
+          },
+          // Deepseek特有信息
+          healthScore: data.healthScore || 70,
+          suggestions: data.suggestions || ['均衡饮食，多样化摄入'],
+          tags: sourceType === 'photo' 
+            ? ['百度AI识别', 'Deepseek详细分析'] 
+            : ['文字搜索', 'Deepseek详细分析']
+        };
+      } else {
+        throw new Error(searchResult.error || 'Deepseek API返回失败');
+      }
+      
+    } catch (error) {
+      console.error('从Deepseek获取食物分析失败:', error);
+      // 降级到内置营养数据库
+      const nutritionInfo = this.getBuiltInNutritionInfo(foodName);
+      return {
+        nutrition: nutritionInfo,
+        description: `这是${foodName}，具体信息暂时无法获取。`,
+        healthScore: 70,
+        suggestions: ['均衡饮食，多样化摄入'],
+        tags: sourceType === 'photo' 
+          ? ['百度AI识别', '分析失败'] 
+          : ['文字搜索', '分析失败']
+      };
+    }
+  }
+
+  /**
+   * 从Deepseek获取营养信息（专门用于百度AI识别后的营养分析）
+   * @param {string} foodName 食物名称
+   * @returns {Promise} Promise对象
+   */
+  async getNutritionInfoFromDeepseek(foodName) {
+    // 使用统一的Deepseek分析方法，标记为拍照识别
+    const analysis = await this.getUnifiedFoodAnalysisFromDeepseek(foodName, 'photo');
+    return analysis.nutrition;
   }
 
   /**
@@ -475,22 +680,8 @@ class AIService {
       
       // 根据来源选择获取方式
       if (source === 'baidu_ai') {
-        // 百度AI识别后，使用Deepseek获取营养信息（如果可用）
-        if (this.useDeepseekAPI) {
-          console.log('百度AI识别后，使用Deepseek获取营养信息:', foodName);
-          const searchResult = await this.deepseekService.searchFoodInfo(foodName, {
-            getNutrition: true
-          });
-          
-          if (searchResult.success && searchResult.data.nutrition) {
-            return searchResult.data.nutrition;
-          }
-        }
-        
-        // 降级到内置营养数据库
-        console.log('使用内置营养数据库查询:', foodName);
-        return this.getBuiltInNutritionInfo(foodName);
-        
+        // 百度AI识别后，使用Deepseek获取营养信息
+        return await this.getNutritionInfoFromDeepseek(foodName);
       } else {
         // Deepseek AI的结果
         if (this.useDeepseekAPI) {
@@ -635,19 +826,26 @@ class AIService {
     try {
       const recognitionRecord = {
         foodName: record.foodName,
-        description: record.description,
-        calorie: record.calorie,
-        confidence: record.confidence,
-        imageUrl: imagePath || record.imageUrl,
-        nutrition: record.nutrition,
+        description: record.description || '',
+        calorie: record.calorie || 0,
+        confidence: record.confidence || 0,
+        imageUrl: imagePath || record.imageUrl || '',
+        nutrition: record.nutrition || {},
         searchType: 'photo',
         timestamp: new Date().getTime(),
-        source: 'ai_recognition'
+        source: 'ai_recognition',
+        // 额外信息
+        healthScore: record.healthScore || 70,
+        suggestions: record.suggestions || [],
+        tags: record.tags || ['AI识别']
       };
       
-      await dataService.saveRecognitionRecord(recognitionRecord);
+      const result = await dataService.saveRecognitionRecord(recognitionRecord);
+      console.log('保存识别记录成功:', result);
+      return result;
     } catch (error) {
       console.error('保存识别记录失败:', error);
+      return { success: false, error: error.message };
     }
   }
 
@@ -661,19 +859,26 @@ class AIService {
     try {
       const searchRecord = {
         foodName: foodName,
-        description: record.description,
-        calorie: record.calorie,
-        confidence: record.confidence,
+        description: record.description || '',
+        calorie: record.calorie || 0,
+        confidence: record.confidence || 0.9,
         imageUrl: record.imageUrl || '',
-        nutrition: record.nutrition,
+        nutrition: record.nutrition || {},
         searchType: 'text',
         timestamp: new Date().getTime(),
-        source: 'text_search'
+        source: 'text_search',
+        // 额外信息
+        healthScore: record.healthScore || 70,
+        suggestions: record.suggestions || [],
+        tags: record.tags || ['文字搜索']
       };
       
-      await dataService.saveRecognitionRecord(searchRecord);
+      const result = await dataService.saveRecognitionRecord(searchRecord);
+      console.log('保存搜索记录成功:', result);
+      return result;
     } catch (error) {
       console.error('保存搜索记录失败:', error);
+      return { success: false, error: error.message };
     }
   }
 

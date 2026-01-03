@@ -1,0 +1,138 @@
+/* pages/account/account.wxss */
+.container {
+  padding: 20rpx;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 20rpx;
+  background: white;
+  border-radius: 20rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.header-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 用户信息卡片 */
+.user-card {
+  background: white;
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  margin-right: 30rpx;
+  border: 4rpx solid #f0f0f0;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.user-id {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 区域 */
+.section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.section-title text {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-left: 10rpx;
+}
+
+/* 操作提示 */
+.tips {
+  background: #e8f4ff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-top: 30rpx;
+  border-left: 6rpx solid #1989fa;
+}
+
+.tip-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #1989fa;
+  margin-bottom: 20rpx;
+}
+
+.tip-content {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+  line-height: 1.6;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 15rpx;
+  }
+  
+  .header,
+  .user-card,
+  .section,
+  .tips {
+    padding: 20rpx;
+  }
+  
+  .user-avatar {
+    width: 80rpx;
+    height: 80rpx;
+  }
+  
+  .user-name {
+    font-size: 28rpx;
+  }
+  
+  .section-title text {
+    font-size: 26rpx;
+  }
+}

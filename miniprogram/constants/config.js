@@ -189,7 +189,7 @@ const config = {
       requireVip: false, // 免费用户每日限制次数
       dailyLimit: 10, // 每日免费次数
       vipDailyLimit: 100, // VIP每日次数
-      useSecureMode: true // 是否使用安全模式（云函数保护API密钥）
+      useSecureMode: false // 使用直接调用模式（解决手机预览问题）
     },
     
     // 营养分析功能

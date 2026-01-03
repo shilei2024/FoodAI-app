@@ -7,11 +7,11 @@
 
 /* 统计信息区域 */
 .stats-section {
-  background: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8rpx 30rpx rgba(102, 126, 234, 0.3);
 }
 
 .stats-grid {
@@ -27,16 +27,16 @@
 
 .stat-value {
   display: block;
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: bold;
-  color: #07c160;
+  color: #fff;
   margin-bottom: 10rpx;
 }
 
 .stat-label {
   display: block;
   font-size: 24rpx;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* 筛选区域 */
@@ -44,7 +44,27 @@
   background: white;
   border-radius: 20rpx;
   margin-bottom: 20rpx;
-  overflow: hidden;
+  padding: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.filter-tabs {
+  display: flex;
+  justify-content: space-around;
+}
+
+.filter-tab {
+  padding: 16rpx 32rpx;
+  font-size: 28rpx;
+  color: #666;
+  border-radius: 30rpx;
+  transition: all 0.3s ease;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
 }
 
 /* 空状态 */
@@ -60,8 +80,16 @@
 .empty-text {
   display: block;
   margin-top: 30rpx;
-  font-size: 28rpx;
-  color: #969799;
+  font-size: 32rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+.empty-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #999;
 }
 
 /* 历史记录区域 */
@@ -76,46 +104,61 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
 }
 
 /* 历史记录列表 */
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: 24rpx;
 }
 
 .history-item {
-  border-bottom: 1rpx solid #f0f0f0;
-  padding-bottom: 30rpx;
+  background: #fafbfc;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  transition: all 0.3s ease;
 }
 
-.history-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.history-item:active {
+  transform: scale(0.98);
+  background: #f0f2f5;
 }
 
-.item-info {
-  margin-top: 20rpx;
-  padding-left: 20rpx;
+/* 额外信息 */
+.item-extra {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx dashed #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .item-time {
   display: flex;
   align-items: center;
-  margin-bottom: 15rpx;
 }
 
-.item-time text {
+.time-text {
   font-size: 24rpx;
-  color: #666;
-  margin: 0 10rpx 0 5rpx;
+  color: #999;
+  margin-left: 8rpx;
 }
 
 .item-tags {
   display: flex;
   gap: 10rpx;
-  margin-bottom: 15rpx;
+  flex: 1;
+  justify-content: center;
+}
+
+.tag-item {
+  margin: 0 4rpx;
 }
 
 .item-actions {
@@ -146,10 +189,15 @@
   }
   
   .stat-value {
-    font-size: 32rpx;
+    font-size: 36rpx;
   }
   
   .stat-label {
     font-size: 22rpx;
+  }
+  
+  .filter-tab {
+    padding: 12rpx 24rpx;
+    font-size: 26rpx;
   }
 }

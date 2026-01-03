@@ -166,20 +166,48 @@
       </view>
     </view>
 
-    <!-- 实用信息 -->
+    <!-- 建议信息 -->
     <view class="section">
       <view class="section-title">
-        <van-icon name="info-o" size="18" />
-        <text>实用信息</text>
+        <van-icon name="bulb-o" size="18" />
+        <text>建议信息</text>
       </view>
-      <view class="practical-info">
-        <view class="info-item">
-          <text class="info-label">建议份量：</text>
-          <text class="info-value">{{foodDetail.servingSize}}</text>
+      <view class="suggestion-info">
+        <view class="info-item" wx:if="{{foodDetail.cookingMethod}}">
+          <view class="info-icon">
+            <van-icon name="fire-o" size="16" color="#ff976a" />
+          </view>
+          <view class="info-content">
+            <text class="info-label">建议食用方法</text>
+            <text class="info-value">{{foodDetail.cookingMethod}}</text>
+          </view>
         </view>
         <view class="info-item">
-          <text class="info-label">保存方法：</text>
-          <text class="info-value">{{foodDetail.storageTips}}</text>
+          <view class="info-icon">
+            <van-icon name="balance-o" size="16" color="#07c160" />
+          </view>
+          <view class="info-content">
+            <text class="info-label">建议食用量</text>
+            <text class="info-value">{{foodDetail.servingSize || '100克/次'}}</text>
+          </view>
+        </view>
+        <view class="info-item">
+          <view class="info-icon">
+            <van-icon name="clock-o" size="16" color="#1989fa" />
+          </view>
+          <view class="info-content">
+            <text class="info-label">建议食用时间</text>
+            <text class="info-value">{{foodDetail.bestTime || '不限'}}</text>
+          </view>
+        </view>
+        <view class="info-item">
+          <view class="info-icon">
+            <van-icon name="shop-o" size="16" color="#7232dd" />
+          </view>
+          <view class="info-content">
+            <text class="info-label">保存方法</text>
+            <text class="info-value">{{foodDetail.storageTips || '常温或冷藏保存'}}</text>
+          </view>
         </view>
       </view>
     </view>
@@ -204,31 +232,29 @@
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
-      <van-button 
-        type="primary" 
-        size="large" 
-        round
-        bindtap="saveRecord"
-      >
-        <van-icon name="success" size="20" />
-        保存记录
-      </van-button>
-      <van-button 
-        type="default" 
-        size="large" 
-        round
-        bindtap="shareFood"
-        wx:if="{{pageType !== 'ai'}}"
-      >
-        <van-icon name="share" size="20" />
-        分享
-      </van-button>
+      <view class="share-buttons">
+        <button 
+          class="share-btn share-btn-primary"
+          open-type="share"
+        >
+          <van-icon name="friends-o" size="20" color="#fff" />
+          <text>分享给好友</text>
+        </button>
+        <button 
+          class="share-btn share-btn-secondary"
+          bindtap="shareToMoments"
+        >
+          <van-icon name="photo-o" size="20" color="#07c160" />
+          <text>分享到朋友圈</text>
+        </button>
+      </view>
       <van-button 
         type="warning" 
         size="large" 
         round
         bindtap="redoRecognition"
         wx:if="{{pageType === 'ai'}}"
+        custom-style="margin-top: 20rpx;"
       >
         <van-icon name="replay" size="20" />
         重新识别

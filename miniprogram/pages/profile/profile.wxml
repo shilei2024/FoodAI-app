@@ -3,25 +3,62 @@
   <!-- 用户信息卡片 -->
   <view class="user-card">
     <view class="user-header">
+      <!-- 未登录时：使用button获取头像 -->
+      <button 
+        wx:if="{{!hasUserInfo}}"
+        class="avatar-button" 
+        open-type="chooseAvatar" 
+        bindchooseavatar="onChooseAvatar"
+      >
+        <image 
+          class="user-avatar" 
+          src="{{tempAvatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&auto=format'}}" 
+          mode="aspectFill"
+        ></image>
+      </button>
+      <!-- 已登录时：显示用户头像 -->
       <image 
+        wx:else
         class="user-avatar" 
-        src="{{hasUserInfo ? userInfo.avatarUrl : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&auto=format'}}" 
+        src="{{userInfo.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&auto=format'}}" 
         mode="aspectFill"
+        bindtap="changeAvatar"
       ></image>
+      
       <view class="user-info">
         <view class="user-name-section">
-          <text class="user-name">
-            {{hasUserInfo ? userInfo.nickName : '未登录用户'}}
-          </text>
-          <van-tag 
-            wx:if="{{isVip}}" 
-            type="danger" 
-            size="mini"
-          >
-            VIP
-          </van-tag>
+          <!-- 未登录时：使用input获取昵称 -->
+          <input 
+            wx:if="{{!hasUserInfo}}"
+            type="nickname" 
+            class="nickname-input" 
+            placeholder="点击输入昵称"
+            value="{{tempNickName}}"
+            bindinput="onNickNameInput"
+            bindblur="onNickNameBlur"
+          />
+          <!-- 已登录时：显示昵称和修改按钮 -->
+          <view wx:else class="user-name-container">
+            <text class="user-name">
+              {{userInfo.nickName || '轻食记用户'}}
+            </text>
+            <van-icon 
+              name="edit" 
+              size="16" 
+              color="#999" 
+              class="edit-icon"
+              bindtap="changeNickname"
+            />
+            <van-tag 
+              wx:if="{{isVip}}" 
+              type="danger" 
+              size="mini"
+            >
+              VIP
+            </van-tag>
+          </view>
         </view>
-        <text class="user-id">ID: {{hasUserInfo ? userInfo.nickName : 'guest'}}</text>
+        <text class="user-id">ID: {{hasUserInfo ? (userInfo.openId || 'guest') : 'guest'}}</text>
         <text class="user-welcome" wx:if="{{hasUserInfo}}">欢迎回来！</text>
       </view>
     </view>
@@ -31,9 +68,10 @@
         wx:if="{{!hasUserInfo}}" 
         type="primary" 
         size="small" 
-        bindtap="getUserProfile"
+        bindtap="confirmLogin"
+        disabled="{{!canLogin}}"
       >
-        立即登录
+        确认登录
       </van-button>
       <van-button 
         wx:else 
@@ -47,29 +85,50 @@
   </view>
 
   <!-- 会员专区 -->
-  <pay-wall wx:if="{{!isVip}}">
-    <view class="vip-section">
-      <view class="vip-header">
-        <van-icon name="diamond-o" size="24" color="#ffd700" />
-        <text class="vip-title">开通会员享特权</text>
-      </view>
-      <view class="vip-features">
-        <text>• 无限次AI识别</text>
-        <text>• 高级营养分析</text>
-        <text>• 专属食物库</text>
-        <text>• 无广告体验</text>
-      </view>
-      <van-button 
-        type="warning" 
-        size="large" 
-        round
-        bindtap="openVip"
-      >
-        <van-icon name="diamond-o" size="20" />
-        立即开通
-      </van-button>
+  <view wx:if="{{!isVip}}" class="vip-section">
+    <view class="vip-header">
+      <van-icon name="diamond-o" size="24" color="#ffd700" />
+      <text class="vip-title">开通会员享特权</text>
     </view>
-  </pay-wall>
+    <view class="vip-features">
+      <text>• 无限次AI识别</text>
+      <text>• 高级营养分析</text>
+      <text>• 个性化食谱推荐</text>
+      <text>• 数据云端同步</text>
+      <text>• 无广告纯净体验</text>
+    </view>
+    <van-button 
+      type="warning" 
+      size="large" 
+      round
+      bindtap="openVip"
+    >
+      <van-icon name="diamond-o" size="20" />
+      立即开通
+    </van-button>
+  </view>
+
+  <!-- VIP会员信息 -->
+  <view wx:else class="vip-info-section">
+    <view class="vip-info-header">
+      <van-icon name="diamond-o" size="24" color="#ffd700" />
+      <text class="vip-info-title">VIP会员专属</text>
+      <van-tag type="danger" size="mini">VIP</van-tag>
+    </view>
+    <view class="vip-info-content">
+      <text class="vip-info-item">• 有效期至：{{vipExpireDate}}</text>
+      <text class="vip-info-item">• 无限次AI识别</text>
+      <text class="vip-info-item">• 高级营养分析</text>
+      <text class="vip-info-item">• 专属客服支持</text>
+    </view>
+    <van-button 
+      type="default" 
+      size="small" 
+      bindtap="openVip"
+    >
+      管理会员
+    </van-button>
+  </view>
 
   <!-- 用户统计数据 -->
   <view class="stats-section">
@@ -93,6 +152,35 @@
       <view class="stat-item">
         <text class="stat-value">{{userStats.continuousDays}}天</text>
         <text class="stat-label">连续记录</text>
+      </view>
+    </view>
+    
+    <!-- 使用次数统计 -->
+    <view class="usage-stats" wx:if="{{hasUserInfo}}">
+      <view class="usage-title">今日使用次数</view>
+      <view class="usage-grid">
+        <view class="usage-item">
+          <van-icon name="photograph" size="16" color="#07c160" />
+          <text class="usage-label">拍照识别</text>
+          <text class="usage-count">{{todayPhotoCount}}/{{dailyPhotoLimit}}</text>
+          <text class="usage-remaining" wx:if="{{photoRemaining > 0}}">
+            剩余{{photoRemaining}}次
+          </text>
+          <text class="usage-remaining zero" wx:else>
+            已用完
+          </text>
+        </view>
+        <view class="usage-item">
+          <van-icon name="search" size="16" color="#1989fa" />
+          <text class="usage-label">搜索识别</text>
+          <text class="usage-count">{{todaySearchCount}}/{{dailySearchLimit}}</text>
+          <text class="usage-remaining" wx:if="{{searchRemaining > 0}}">
+            剩余{{searchRemaining}}次
+          </text>
+          <text class="usage-remaining zero" wx:else>
+            已用完
+          </text>
+        </view>
       </view>
     </view>
   </view>

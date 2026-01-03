@@ -3,7 +3,9 @@
     "pages/index/index",
     "pages/history/history",
     "pages/profile/profile",
-    "pages/detail/detail"
+    "pages/detail/detail",
+    "pages/recipe/recipe",
+    "pages/test/test"
   ],
   
   "window": {

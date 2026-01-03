@@ -17,15 +17,10 @@ Component({
       type: Boolean,
       value: true
     },
-    // 是否显示图例
-    showLegend: {
-      type: Boolean,
-      value: true
-    },
     // 图表高度
     height: {
       type: Number,
-      value: 300
+      value: 400
     }
   },
 
@@ -70,20 +65,37 @@ Component({
       const colors = []
       const units = []
 
-      // 定义营养项和对应的颜色、单位
+      // 定义营养项和对应的颜色、单位（扩展列表）
       const nutritionItems = [
+        // 基础营养素
         { key: 'protein', name: '蛋白质', color: '#07c160', unit: 'g' },
         { key: 'fat', name: '脂肪', color: '#1989fa', unit: 'g' },
         { key: 'carbohydrate', name: '碳水化合物', color: '#ff976a', unit: 'g' },
         { key: 'fiber', name: '膳食纤维', color: '#ee0a24', unit: 'g' },
-        { key: 'calories', name: '热量', color: '#ffd700', unit: '千卡' },
-        { key: 'vitaminC', name: '维生素C', color: '#7232dd', unit: 'mg' },
-        { key: 'vitaminK', name: '维生素K', color: '#00bcd4', unit: 'μg' },
-        { key: 'potassium', name: '钾', color: '#ff9800', unit: 'mg' },
+        { key: 'water', name: '水分', color: '#00bcd4', unit: 'g' },
+        // 维生素
+        { key: 'vitaminA', name: '维生素A', color: '#ff5722', unit: 'μg' },
+        { key: 'vitaminC', name: '维生素C', color: '#ffc107', unit: 'mg' },
+        { key: 'vitaminD', name: '维生素D', color: '#9c27b0', unit: 'μg' },
+        { key: 'vitaminE', name: '维生素E', color: '#4caf50', unit: 'mg' },
+        { key: 'vitaminK', name: '维生素K', color: '#795548', unit: 'μg' },
+        { key: 'vitaminB1', name: '维生素B1', color: '#e91e63', unit: 'mg' },
+        { key: 'vitaminB2', name: '维生素B2', color: '#3f51b5', unit: 'mg' },
+        { key: 'vitaminB6', name: '维生素B6', color: '#009688', unit: 'mg' },
+        { key: 'vitaminB12', name: '维生素B12', color: '#673ab7', unit: 'μg' },
+        { key: 'niacin', name: '烟酸', color: '#ff9800', unit: 'mg' },
+        { key: 'folate', name: '叶酸', color: '#8bc34a', unit: 'μg' },
+        // 矿物质
         { key: 'calcium', name: '钙', color: '#9c27b0', unit: 'mg' },
         { key: 'iron', name: '铁', color: '#f44336', unit: 'mg' },
+        { key: 'zinc', name: '锌', color: '#607d8b', unit: 'mg' },
+        { key: 'potassium', name: '钾', color: '#ff9800', unit: 'mg' },
         { key: 'sodium', name: '钠', color: '#2196f3', unit: 'mg' },
-        { key: 'zinc', name: '锌', color: '#ff9800', unit: 'mg' }
+        { key: 'magnesium', name: '镁', color: '#00bcd4', unit: 'mg' },
+        { key: 'phosphorus', name: '磷', color: '#cddc39', unit: 'mg' },
+        { key: 'selenium', name: '硒', color: '#ff5722', unit: 'μg' },
+        { key: 'copper', name: '铜', color: '#795548', unit: 'mg' },
+        { key: 'manganese', name: '锰', color: '#9e9e9e', unit: 'mg' }
       ]
 
       // 过滤出有数据的营养项
@@ -96,9 +108,15 @@ Component({
           if (item.key === 'calories') {
             value = nutritionData.calorie || nutritionData.calories
           } else if (item.key === 'carbohydrate') {
-            value = nutritionData.carbohydrate || nutritionData.carb
-          } else if (item.key === 'vitaminC') {
-            value = nutritionData.vitaminC || nutritionData.vitc
+            value = nutritionData.carbohydrate || nutritionData.carb || nutritionData.carbs
+          } else if (item.key === 'vitaminB1') {
+            value = nutritionData.vitaminB1 || nutritionData.thiamin
+          } else if (item.key === 'vitaminB2') {
+            value = nutritionData.vitaminB2 || nutritionData.riboflavin
+          } else if (item.key === 'niacin') {
+            value = nutritionData.niacin || nutritionData.vitaminB3
+          } else if (item.key === 'folate') {
+            value = nutritionData.folate || nutritionData.folicAcid || nutritionData.vitaminB9
           }
         }
         
@@ -146,7 +164,7 @@ Component({
           disableGrid: true
         },
         legend: {
-          show: this.data.showLegend,
+          show: false,
           position: 'top',
           float: 'center'
         },
@@ -213,73 +231,88 @@ Component({
       const { categories, series, colors } = this.data.chartConfig
       if (!categories || categories.length === 0) return
 
-      const padding = 40
-      const chartWidth = width - padding * 2
-      const chartHeight = height - padding * 2
-      const barWidth = chartWidth / categories.length * 0.6
-      const maxValue = Math.max(...series[0].data)
+      const paddingLeft = 45
+      const paddingRight = 15
+      const paddingTop = 20
+      const paddingBottom = 65 // 增加底部空间用于倾斜标签
+      const chartWidth = width - paddingLeft - paddingRight
+      const chartHeight = height - paddingTop - paddingBottom
+      const barWidth = Math.min(chartWidth / categories.length * 0.65, 35)
+      const maxValue = Math.max(...series[0].data) * 1.15 // 增加15%的空间
 
       // 绘制坐标轴
       ctx.setStrokeStyle('#ccc')
       ctx.setLineWidth(1)
-      ctx.moveTo(padding, padding)
-      ctx.lineTo(padding, height - padding)
-      ctx.lineTo(width - padding, height - padding)
+      ctx.beginPath()
+      ctx.moveTo(paddingLeft, paddingTop)
+      ctx.lineTo(paddingLeft, height - paddingBottom)
+      ctx.lineTo(width - paddingRight, height - paddingBottom)
       ctx.stroke()
 
-      // 绘制刻度
-      const ySteps = 5
+      // 绘制Y轴刻度和网格线
+      const ySteps = 4
       for (let i = 0; i <= ySteps; i++) {
-        const y = padding + (chartHeight / ySteps) * i
+        const y = paddingTop + (chartHeight / ySteps) * i
         const value = (maxValue / ySteps) * (ySteps - i)
         
-        ctx.setStrokeStyle('#ccc')
-        ctx.setLineWidth(1)
-        ctx.moveTo(padding - 5, y)
-        ctx.lineTo(padding, y)
+        // 绘制网格线
+        ctx.setStrokeStyle('#f0f0f0')
+        ctx.setLineWidth(0.5)
+        ctx.beginPath()
+        ctx.moveTo(paddingLeft, y)
+        ctx.lineTo(width - paddingRight, y)
         ctx.stroke()
-
-        // 微信小程序canvas文本绘制
-        ctx.setFontSize(12)
-        ctx.setFillStyle('#666')
+        
+        // 绘制Y轴刻度值
+        ctx.setFontSize(9)
+        ctx.setFillStyle('#999')
         ctx.setTextAlign('right')
         ctx.setTextBaseline('middle')
-        ctx.fillText(value.toFixed(1), padding - 10, y)
+        // 格式化数值显示
+        let displayValue = value
+        if (value >= 100) {
+          displayValue = Math.round(value)
+        } else if (value >= 10) {
+          displayValue = value.toFixed(1)
+        } else {
+          displayValue = value.toFixed(1)
+        }
+        ctx.fillText(displayValue, paddingLeft - 5, y)
       }
 
       // 绘制柱状图
       categories.forEach((category, index) => {
-        const x = padding + (chartWidth / categories.length) * index + (chartWidth / categories.length - barWidth) / 2
+        const x = paddingLeft + (chartWidth / categories.length) * index + (chartWidth / categories.length - barWidth) / 2
         const value = series[0].data[index]
-        const barHeight = (value / maxValue) * chartHeight
+        const barHeight = Math.max((value / maxValue) * chartHeight, 2) // 最小高度2px
         
-        // 绘制柱状
+        // 绘制柱状（带圆角效果）
         ctx.setFillStyle(colors[index] || '#07c160')
-        ctx.fillRect(x, height - padding - barHeight, barWidth, barHeight)
+        ctx.beginPath()
+        const cornerRadius = Math.min(3, barWidth / 4)
+        ctx.moveTo(x, height - paddingBottom)
+        ctx.lineTo(x, height - paddingBottom - barHeight + cornerRadius)
+        ctx.arcTo(x, height - paddingBottom - barHeight, x + cornerRadius, height - paddingBottom - barHeight, cornerRadius)
+        ctx.lineTo(x + barWidth - cornerRadius, height - paddingBottom - barHeight)
+        ctx.arcTo(x + barWidth, height - paddingBottom - barHeight, x + barWidth, height - paddingBottom - barHeight + cornerRadius, cornerRadius)
+        ctx.lineTo(x + barWidth, height - paddingBottom)
+        ctx.closePath()
+        ctx.fill()
 
-        // 绘制数值
-        ctx.setFontSize(12)
-        ctx.setFillStyle('#333')
-        ctx.setTextAlign('center')
-        ctx.setTextBaseline('bottom')
-        ctx.fillText(value.toFixed(1), x + barWidth / 2, height - padding - barHeight - 5)
-
-        // 绘制标签
-        ctx.setFontSize(12)
+        // 绘制完整标签（倾斜45度显示）
+        ctx.save()
+        ctx.setFontSize(9)
         ctx.setFillStyle('#666')
-        ctx.setTextAlign('center')
-        ctx.setTextBaseline('top')
         
-        // 处理长标签换行
-        const maxChars = 4
-        if (category.length > maxChars) {
-          const part1 = category.substring(0, maxChars)
-          const part2 = category.substring(maxChars)
-          ctx.fillText(part1, x + barWidth / 2, height - padding + 5)
-          ctx.fillText(part2, x + barWidth / 2, height - padding + 20)
-        } else {
-          ctx.fillText(category, x + barWidth / 2, height - padding + 5)
-        }
+        // 移动到标签位置并旋转
+        const labelX = x + barWidth / 2
+        const labelY = height - paddingBottom + 8
+        ctx.translate(labelX, labelY)
+        ctx.rotate(-Math.PI / 4) // 倾斜45度
+        ctx.setTextAlign('right')
+        ctx.setTextBaseline('middle')
+        ctx.fillText(category, 0, 0) // 显示完整名称
+        ctx.restore()
       })
     },
 
@@ -290,17 +323,41 @@ Component({
 
       const centerX = width / 2
       const centerY = height / 2
-      const radius = Math.min(width, height) * 0.35
+      const radius = Math.min(width, height) * 0.25
       const total = series[0].data.reduce((sum, value) => sum + value, 0)
 
-      // 绘制饼图
+      // 计算每个扇形的数据和角度
+      const sliceData = []
       let startAngle = -Math.PI / 2 // 从12点方向开始
+      
       categories.forEach((category, index) => {
         const value = series[0].data[index]
+        const percentage = (value / total) * 100
         const sliceAngle = (value / total) * 2 * Math.PI
+        const midAngle = startAngle + sliceAngle / 2
+        
+        sliceData.push({
+          category,
+          value,
+          percentage,
+          color: colors[index] || '#07c160',
+          startAngle,
+          sliceAngle,
+          midAngle
+        })
+        
+        startAngle += sliceAngle
+      })
+      
+      // 只显示占比>=8%的标签
+      const labelThreshold = 8
+      
+      // 绘制所有扇形
+      sliceData.forEach((slice) => {
+        const { color, startAngle, sliceAngle } = slice
 
-        // 绘制扇形（微信小程序使用arc方法）
-        ctx.setFillStyle(colors[index] || '#07c160')
+        // 绘制扇形
+        ctx.setFillStyle(color)
         ctx.beginPath()
         ctx.moveTo(centerX, centerY)
         ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle)
@@ -311,65 +368,83 @@ Component({
         ctx.setStrokeStyle('#fff')
         ctx.setLineWidth(2)
         ctx.stroke()
-
-        // 计算标签位置
-        const midAngle = startAngle + sliceAngle / 2
-        const labelRadius = radius * 1.2
-        const labelX = centerX + Math.cos(midAngle) * labelRadius
-        const labelY = centerY + Math.sin(midAngle) * labelRadius
-
-        // 绘制百分比标签
-        const percentage = ((value / total) * 100).toFixed(1)
-        ctx.setFontSize(12)
-        ctx.setFillStyle('#333')
-        ctx.setTextAlign('center')
-        ctx.setTextBaseline('middle')
-        ctx.fillText(`${percentage}%`, labelX, labelY)
-
-        // 绘制名称标签（在外圈）
-        const nameRadius = radius * 1.4
-        const nameX = centerX + Math.cos(midAngle) * nameRadius
-        const nameY = centerY + Math.sin(midAngle) * nameRadius
-
-        ctx.setFontSize(10)
-        ctx.setFillStyle('#666')
-        ctx.setTextAlign('center')
-        ctx.setTextBaseline('middle')
-        
-        // 处理长标签
-        if (category.length > 4) {
-          const part1 = category.substring(0, 4)
-          const part2 = category.substring(4)
-          ctx.fillText(part1, nameX, nameY - 6)
-          ctx.fillText(part2, nameX, nameY + 6)
-        } else {
-          ctx.fillText(category, nameX, nameY)
-        }
-
-        startAngle += sliceAngle
       })
 
-      // 绘制中心圆
+      // 绘制中心圆（甜甜圈效果）
       ctx.setFillStyle('#fff')
       ctx.beginPath()
-      ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI)
+      ctx.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI)
       ctx.closePath()
       ctx.fill()
       
-      ctx.setStrokeStyle('#e0e0e0')
+      ctx.setStrokeStyle('#f0f0f0')
       ctx.setLineWidth(1)
       ctx.stroke()
 
-      // 绘制总数值
-      ctx.setFontSize(14)
-      ctx.setFillStyle('#333')
+      // 计算标签位置，避免重叠
+      const labelRadius = radius * 1.15
+      const labels = sliceData
+        .filter(slice => slice.percentage >= labelThreshold)
+        .map(slice => {
+          const { category, percentage, midAngle, color } = slice
+          const isRightSide = Math.cos(midAngle) >= 0
+          
+          // 标签基础位置
+          let labelX = centerX + Math.cos(midAngle) * labelRadius
+          let labelY = centerY + Math.sin(midAngle) * labelRadius
+          
+          return {
+            category,
+            percentage,
+            midAngle,
+            color,
+            labelX,
+            labelY,
+            isRightSide
+          }
+        })
+      
+      // 调整标签位置避免重叠
+      const minVerticalGap = 16 // 最小垂直间距
+      labels.sort((a, b) => a.labelY - b.labelY) // 按Y坐标排序
+      
+      for (let i = 1; i < labels.length; i++) {
+        const prev = labels[i - 1]
+        const curr = labels[i]
+        
+        // 如果两个标签在同一侧且垂直距离太近
+        if (prev.isRightSide === curr.isRightSide) {
+          const gap = curr.labelY - prev.labelY
+          if (gap < minVerticalGap) {
+            curr.labelY = prev.labelY + minVerticalGap
+          }
+        }
+      }
+      
+      // 绘制标签（在扇形边上）
+      labels.forEach((label) => {
+        const { category, percentage, labelX, labelY, isRightSide } = label
+        
+        // 绘制标签文字（完整名称 + 百分比）
+        ctx.setFontSize(11)
+        ctx.setFillStyle('#333')
+        ctx.setTextAlign(isRightSide ? 'left' : 'right')
+        ctx.setTextBaseline('middle')
+        
+        const displayText = `${category} ${percentage.toFixed(0)}%`
+        ctx.fillText(displayText, labelX, labelY)
+      })
+
+      // 绘制中心标题
+      ctx.setFontSize(11)
+      ctx.setFillStyle('#666')
       ctx.setTextAlign('center')
       ctx.setTextBaseline('middle')
-      ctx.fillText('总含量', centerX, centerY - 10)
+      ctx.fillText('营养', centerX, centerY - 6)
       
-      ctx.setFontSize(16)
+      ctx.setFontSize(9)
       ctx.setFillStyle('#07c160')
-      ctx.fillText(total.toFixed(1), centerX, centerY + 10)
+      ctx.fillText('成分', centerX, centerY + 6)
     },
 
     // 绘制雷达图（微信小程序版本）
@@ -379,9 +454,9 @@ Component({
 
       const centerX = width / 2
       const centerY = height / 2
-      const maxRadius = Math.min(width, height) * 0.35
+      const maxRadius = Math.min(width, height) * 0.26
       const numPoints = categories.length
-      const maxValue = Math.max(...series[0].data)
+      const maxValue = Math.max(...series[0].data) * 1.15
 
       // 绘制雷达网格
       const gridCount = 3
@@ -401,12 +476,12 @@ Component({
           }
         }
         ctx.closePath()
-        ctx.setStrokeStyle('#e0e0e0')
+        ctx.setStrokeStyle('#e8e8e8')
         ctx.setLineWidth(0.5)
         ctx.stroke()
       }
 
-      // 绘制轴线
+      // 绘制轴线和标签
       for (let i = 0; i < numPoints; i++) {
         const angle = (i / numPoints) * 2 * Math.PI - Math.PI / 2
         const x = centerX + Math.cos(angle) * maxRadius
@@ -415,33 +490,46 @@ Component({
         ctx.beginPath()
         ctx.moveTo(centerX, centerY)
         ctx.lineTo(x, y)
-        ctx.setStrokeStyle('#ccc')
-        ctx.setLineWidth(1)
+        ctx.setStrokeStyle('#ddd')
+        ctx.setLineWidth(0.5)
         ctx.stroke()
 
-        // 绘制标签
-        const labelRadius = maxRadius * 1.1
-        const labelX = centerX + Math.cos(angle) * labelRadius
-        const labelY = centerY + Math.sin(angle) * labelRadius
+        // 绘制完整标签（更大字体，更清晰）
+        const labelRadius = maxRadius * 1.25
+        let labelX = centerX + Math.cos(angle) * labelRadius
+        let labelY = centerY + Math.sin(angle) * labelRadius
         
-        ctx.setFontSize(12)
-        ctx.setFillStyle('#666')
-        ctx.setTextAlign('center')
-        ctx.setTextBaseline('middle')
+        // 设置更大的字体
+        ctx.setFontSize(11)
+        ctx.setFillStyle('#333')
         
-        // 调整标签位置
+        // 根据角度调整标签位置和对齐方式
+        const cosAngle = Math.cos(angle)
+        const sinAngle = Math.sin(angle)
+        
         let textAlign = 'center'
         let textBaseline = 'middle'
         
-        if (Math.abs(Math.cos(angle)) > 0.7) {
-          textAlign = Math.cos(angle) > 0 ? 'left' : 'right'
+        // 根据位置精确调整对齐和偏移
+        if (cosAngle > 0.5) {
+          textAlign = 'left'
+          labelX += 5
+        } else if (cosAngle < -0.5) {
+          textAlign = 'right'
+          labelX -= 5
         }
-        if (Math.abs(Math.sin(angle)) > 0.7) {
-          textBaseline = Math.sin(angle) > 0 ? 'top' : 'bottom'
+        
+        if (sinAngle > 0.5) {
+          textBaseline = 'top'
+          labelY += 3
+        } else if (sinAngle < -0.5) {
+          textBaseline = 'bottom'
+          labelY -= 3
         }
         
         ctx.setTextAlign(textAlign)
         ctx.setTextBaseline(textBaseline)
+        // 显示完整标签名称
         ctx.fillText(categories[i], labelX, labelY)
       }
 
@@ -461,13 +549,13 @@ Component({
         }
       }
       ctx.closePath()
-      ctx.setFillStyle('rgba(7, 193, 96, 0.3)')
+      ctx.setFillStyle('rgba(7, 193, 96, 0.25)')
       ctx.fill()
       ctx.setStrokeStyle('#07c160')
       ctx.setLineWidth(2)
       ctx.stroke()
 
-      // 绘制数据点
+      // 绘制数据点（不显示数值）
       for (let i = 0; i < numPoints; i++) {
         const value = series[0].data[i]
         const angle = (i / numPoints) * 2 * Math.PI - Math.PI / 2
@@ -483,15 +571,8 @@ Component({
         ctx.fill()
         
         ctx.setStrokeStyle('#fff')
-        ctx.setLineWidth(1)
+        ctx.setLineWidth(1.5)
         ctx.stroke()
-
-        // 绘制数值标签
-        ctx.setFontSize(10)
-        ctx.setFillStyle('#333')
-        ctx.setTextAlign('center')
-        ctx.setTextBaseline('bottom')
-        ctx.fillText(value.toFixed(1), x, y - 6)
       }
     },
 
@@ -501,29 +582,6 @@ Component({
       if (type !== this.data.type) {
         this.setData({ type: type })
         this.updateChartData(this.data.data)
-      }
-    },
-
-    // 图例点击事件
-    onLegendClick(e) {
-      const index = e.currentTarget.dataset.index
-      const { categories, series, colors } = this.data.chartConfig
-      
-      if (index >= 0 && index < categories.length) {
-        const category = categories[index]
-        const value = series[0].data[index]
-        const color = colors ? colors[index] : '#07c160'
-        const unit = this.data.chartConfig.units ? this.data.chartConfig.units[index] : '单位'
-        
-        // 显示选中效果
-        wx.showToast({
-          title: `${category}: ${value.toFixed(1)}${unit}`,
-          icon: 'none',
-          duration: 1500
-        })
-        
-        // 可以在这里添加高亮效果
-        console.log(`选中图例: ${category}, 值: ${value}${unit}`)
       }
     },
 

@@ -1,14 +1,9 @@
-// pages/index/index.js
+// pages/index/index.js - 清理版本
 const app = getApp()
 const Toast = require('../../miniprogram_npm/vant-weapp/toast/toast')
 const Dialog = require('../../miniprogram_npm/vant-weapp/dialog/dialog')
 const imageProcessor = require('../../utils/imageProcessor.js')
-const ImagePaths = {
-  getDefaultFood: () => '/images/default-food.png',
-  getShareCover: () => '/images/default-food.png'
-}
-const services = require('../../services/index.js')
-const aiService = services.getAIService()
+const aiServiceModule = require('../../services/ai-service.js')
 
 Page({
   data: {
@@ -17,7 +12,20 @@ Page({
     showResult: false,
     loading: false,
     activeTab: 'home',
-    debugMode: true, // 开发时开启调试模式
+    
+    // 用户状态
+    isLoggedIn: false,
+    isGuest: true,
+    userStatus: 'guest', // guest, logged_in, vip
+    userInfo: null,
+    
+    // 使用次数限制
+    dailyPhotoLimit: 5,
+    dailySearchLimit: 10,
+    todayPhotoCount: 0,
+    todaySearchCount: 0,
+    photoRemaining: 5,
+    searchRemaining: 10,
     
     // 热门食物
     hotFoods: ['苹果', '香蕉', '米饭', '鸡蛋', '牛奶', '面包', '鸡肉', '牛肉', '鱼肉', '蔬菜'],
@@ -45,6 +53,9 @@ Page({
   onLoad() {
     // 页面加载时初始化
     this.initPage()
+    
+    // 加载用户状态
+    this.loadUserStatus()
   },
 
   onShow() {
@@ -55,6 +66,30 @@ Page({
   initPage() {
     // 初始化页面
     console.log('首页初始化')
+  },
+  
+  // 加载用户状态
+  loadUserStatus() {
+    const app = getApp()
+    
+    this.setData({
+      isLoggedIn: app.globalData.isLoggedIn,
+      isGuest: app.globalData.isGuest,
+      userStatus: app.globalData.userStatus,
+      userInfo: app.globalData.userInfo,
+      todayPhotoCount: app.globalData.todayPhotoCount,
+      todaySearchCount: app.globalData.todaySearchCount,
+      photoRemaining: app.globalData.dailyPhotoLimit - app.globalData.todayPhotoCount,
+      searchRemaining: app.globalData.dailySearchLimit - app.globalData.todaySearchCount
+    })
+    
+    console.log('用户状态加载完成:', {
+      isLoggedIn: this.data.isLoggedIn,
+      isGuest: this.data.isGuest,
+      userStatus: this.data.userStatus,
+      photoRemaining: this.data.photoRemaining,
+      searchRemaining: this.data.searchRemaining
+    })
   },
 
   // 拍照功能 - 显示选择菜单（相机或相册）
@@ -69,6 +104,26 @@ Page({
         icon: 'none',
         duration: 1500
       })
+      return
+    }
+    
+    // 检查用户权限
+    const app = getApp()
+    const permission = app.checkPhotoPermission()
+    
+    if (!permission.canUse) {
+      if (permission.needLogin) {
+        // 需要登录
+        this.showLoginDialog('拍照识别')
+      } else {
+        // 次数用完
+        wx.showModal({
+          title: '使用限制',
+          content: permission.reason,
+          showCancel: false,
+          confirmText: '知道了'
+        })
+      }
       return
     }
     
@@ -92,44 +147,90 @@ Page({
     })
   },
 
-  // 打开相机拍照
+  // 打开相机拍照 - 简化稳定版本
   async openCamera() {
-    console.log('开始打开相机')
+    console.log('开始打开相机（简化版本）')
     try {
       this.setData({ loading: true })
-      console.log('设置loading为true')
       
-      // 先检查相机权限
-      console.log('检查相机权限...')
-      const cameraAuth = await this.checkCameraPermission()
-      console.log('相机权限检查结果:', cameraAuth)
-      
-      if (!cameraAuth) {
-        console.log('相机权限未授权，抛出错误')
-        throw new Error('相机权限未授权')
-      }
-      
-      console.log('调用图片处理模块...')
-      // 使用图片处理模块拍照
-      const result = await imageProcessor.processImagePipeline({
-        capture: true,
-        compress: true,
-        upload: false, // 暂时不上传，先本地处理
-        maxSize: 500 * 1024, // 500KB
-        showActionSheet: false, // 直接拍照
-        sourceType: ['camera']
+      // 直接使用 wx.chooseMedia 拍照
+      const res = await new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          count: 1,
+          mediaType: ['image'],
+          sourceType: ['camera'],
+          sizeType: ['compressed'],
+          camera: 'back',
+          success: resolve,
+          fail: reject
+        })
       })
       
-      console.log('图片处理成功，开始识别:', result)
-      // 处理成功，显示结果
-      await this.handleProcessedImage(result)
+      console.log('拍照成功:', res)
+      
+      if (res.tempFiles && res.tempFiles.length > 0) {
+        const file = res.tempFiles[0]
+        console.log('图片信息:', file)
+        
+        // 压缩图片（如果需要）
+        let finalPath = file.tempFilePath
+        let finalSize = file.size
+        
+        if (file.size > 500 * 1024) { // 大于500KB才压缩
+          console.log('图片太大，开始压缩...')
+          try {
+            const compressRes = await new Promise((resolve, reject) => {
+              wx.compressImage({
+                src: file.tempFilePath,
+                quality: 80,
+                success: resolve,
+                fail: reject
+              })
+            })
+            finalPath = compressRes.tempFilePath
+            finalSize = compressRes.tempFileSize || file.size
+            console.log('压缩完成，新大小:', finalSize)
+          } catch (compressError) {
+            console.warn('压缩失败，使用原图:', compressError)
+          }
+        }
+        
+        // 构建结果对象
+        const result = {
+          files: [{
+            path: finalPath,
+            size: finalSize,
+            width: file.width,
+            height: file.height,
+            type: file.fileType
+          }],
+          originalPath: file.tempFilePath,
+          originalSize: file.size,
+          width: file.width,
+          height: file.height,
+          type: file.fileType,
+          processed: finalSize < file.size,
+          finalPath: finalPath,
+          finalSize: finalSize,
+          info: {
+            width: file.width,
+            height: file.height
+          }
+        }
+        
+        console.log('处理成功，开始识别:', result)
+        await this.handleProcessedImage(result)
+      } else {
+        throw new Error('未获取到图片文件')
+      }
       
     } catch (error) {
       console.error('拍照处理失败:', error)
       
       // 处理权限错误
-      if (error.message.includes('权限') || error.message.includes('authorize') || 
-          error.message.includes('相机权限未授权')) {
+      if (error.errMsg && error.errMsg.includes('auth deny') || 
+          error.message.includes('权限') || 
+          error.errMsg?.includes('authorize')) {
         console.log('显示权限错误对话框')
         Dialog.confirm({
           title: '相机权限',
@@ -138,52 +239,143 @@ Page({
           cancelButtonText: '取消'
         }).then(() => {
           wx.openSetting()
+        }).catch(() => {
+          // 用户取消
         })
+      } else if (error.errMsg && error.errMsg.includes('cancel')) {
+        // 用户取消拍照，不显示错误
+        console.log('用户取消了拍照')
       } else {
-        console.log('显示其他错误提示:', error.message)
+        // 显示友好的错误提示
+        let errorMessage = '拍照失败，请重试'
+        if (error.errMsg) {
+          if (error.errMsg.includes('fail')) {
+            errorMessage = '拍照失败，请检查相机是否正常'
+          }
+        }
+        
         wx.showToast({
-          title: error.message || '拍照失败，请重试',
+          title: errorMessage,
           icon: 'none',
           duration: 3000
         })
       }
     } finally {
-      console.log('finally块：设置loading为false')
       this.setData({ loading: false })
     }
   },
 
-  // 从相册选择图片
+  // 从相册选择图片 - 简化稳定版本
   async chooseImageFromAlbum() {
+    console.log('开始从相册选择图片（简化版本）')
     try {
       this.setData({ loading: true })
       
-      // 使用图片处理模块选择图片
-      const result = await imageProcessor.processImagePipeline({
-        capture: true,
-        compress: true,
-        upload: false,
-        maxSize: 500 * 1024,
-        showActionSheet: false,
-        sourceType: ['album']
+      // 直接使用 wx.chooseMedia 选择图片
+      const res = await new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          count: 1,
+          mediaType: ['image'],
+          sourceType: ['album'],
+          sizeType: ['compressed'],
+          success: resolve,
+          fail: reject
+        })
       })
       
-      // 处理成功，显示结果
-      await this.handleProcessedImage(result)
+      console.log('选择图片成功:', res)
+      
+      if (res.tempFiles && res.tempFiles.length > 0) {
+        const file = res.tempFiles[0]
+        console.log('图片信息:', file)
+        
+        // 压缩图片（如果需要）
+        let finalPath = file.tempFilePath
+        let finalSize = file.size
+        
+        if (file.size > 500 * 1024) { // 大于500KB才压缩
+          console.log('图片太大，开始压缩...')
+          try {
+            const compressRes = await new Promise((resolve, reject) => {
+              wx.compressImage({
+                src: file.tempFilePath,
+                quality: 80,
+                success: resolve,
+                fail: reject
+              })
+            })
+            finalPath = compressRes.tempFilePath
+            finalSize = compressRes.tempFileSize || file.size
+            console.log('压缩完成，新大小:', finalSize)
+          } catch (compressError) {
+            console.warn('压缩失败，使用原图:', compressError)
+          }
+        }
+        
+        // 构建结果对象
+        const result = {
+          files: [{
+            path: finalPath,
+            size: finalSize,
+            width: file.width,
+            height: file.height,
+            type: file.fileType
+          }],
+          originalPath: file.tempFilePath,
+          originalSize: file.size,
+          width: file.width,
+          height: file.height,
+          type: file.fileType,
+          processed: finalSize < file.size,
+          finalPath: finalPath,
+          finalSize: finalSize,
+          info: {
+            width: file.width,
+            height: file.height
+          }
+        }
+        
+        console.log('处理成功，开始识别:', result)
+        await this.handleProcessedImage(result)
+      } else {
+        throw new Error('未选择图片')
+      }
       
     } catch (error) {
       console.error('选择图片处理失败:', error)
       
-      if (error.message === '用户取消选择') {
-        // 用户取消，不显示错误
+      if (error.errMsg && error.errMsg.includes('cancel')) {
+        // 用户取消选择，不显示错误
+        console.log('用户取消了图片选择')
         return
       }
       
-      wx.showToast({
-        title: error.message || '选择图片失败',
-        icon: 'none',
-        duration: 3000
-      })
+      // 显示友好的错误提示
+      let errorMessage = '选择图片失败，请重试'
+      if (error.errMsg) {
+        if (error.errMsg.includes('auth deny') || error.errMsg.includes('权限')) {
+          errorMessage = '需要相册权限，请去设置中开启'
+          
+          Dialog.confirm({
+            title: '相册权限',
+            message: '需要相册权限才能选择图片',
+            confirmButtonText: '去设置',
+            cancelButtonText: '取消'
+          }).then(() => {
+            wx.openSetting()
+          })
+        } else if (error.errMsg.includes('fail')) {
+          errorMessage = '选择图片失败，请重试'
+        }
+      }
+      
+      if (!error.errMsg || !error.errMsg.includes('auth deny')) {
+        wx.showToast({
+          title: errorMessage,
+          icon: 'none',
+          duration: 3000
+        })
+      }
     } finally {
       this.setData({ loading: false })
     }
@@ -191,20 +383,32 @@ Page({
 
   // 处理已处理的图片
   async handleProcessedImage(processResult) {
-    let loadingShown = false
+    console.log('开始处理已处理的图片，输入:', processResult)
+    
+    // 显示加载状态
+    wx.showLoading({
+      title: 'AI识别中...',
+      mask: true
+    })
+    
     try {
-      // 显示加载状态
-      wx.showLoading({
-        title: 'AI识别中...',
-        mask: true
-      })
-      loadingShown = true
       
-      // 获取图片路径（适配新的chooseImage返回格式）
-      const imagePath = processResult.files && processResult.files[0] ? processResult.files[0].path : processResult
+      // 获取图片路径（适配不同的返回格式）
+      let imagePath = ''
+      if (processResult.files && processResult.files[0]) {
+        imagePath = processResult.files[0].path
+      } else if (processResult.finalPath) {
+        imagePath = processResult.finalPath
+      } else if (typeof processResult === 'string') {
+        imagePath = processResult
+      } else {
+        throw new Error('无法获取图片路径')
+      }
+      
+      console.log('获取到的图片路径:', imagePath)
       
       // 调用真实的AI识别服务
-      const recognitionResult = await aiService.recognizeFood(imagePath, {
+      const recognitionResult = await aiServiceModule.recognizeFood(imagePath, {
         compress: false, // 已经压缩过了
         getNutrition: true,
         saveRecord: true,
@@ -212,7 +416,19 @@ Page({
         silent: true // 不显示错误提示，手动处理
       })
       
+      console.log('AI识别结果:', recognitionResult)
+      
       if (recognitionResult.success) {
+        // 增加拍照使用次数
+        const app = getApp()
+        const newCount = app.incrementPhotoCount()
+        
+        // 更新页面状态
+        this.setData({
+          todayPhotoCount: newCount,
+          photoRemaining: app.globalData.dailyPhotoLimit - newCount
+        })
+        
         // 显示识别结果
         this.showRecognitionResult(imagePath, processResult, recognitionResult.data)
         wx.showToast({
@@ -221,14 +437,15 @@ Page({
           duration: 2000
         })
       } else {
-        // 识别失败
+        // 识别失败，显示错误信息但不抛出错误
         const errorMsg = recognitionResult.error || '识别失败，请重试'
         wx.showToast({
           title: errorMsg,
           icon: 'none',
           duration: 3000
         })
-        throw new Error(errorMsg)
+        // 不抛出错误，直接返回
+        return
       }
       
     } catch (error) {
@@ -246,6 +463,8 @@ Page({
           errorMessage = '未识别到食物，请重新拍照'
         } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
           errorMessage = 'API密钥错误，请检查配置'
+        } else if (error.message.includes('无法获取图片路径')) {
+          errorMessage = '图片处理失败，请重试'
         } else {
           errorMessage = error.message
         }
@@ -256,12 +475,11 @@ Page({
         icon: 'none',
         duration: 3000
       })
-      throw error
+      // 不重新抛出错误，让调用者处理
+      return
     } finally {
       // 确保隐藏loading
-      if (loadingShown) {
-        wx.hideLoading()
-      }
+      wx.hideLoading()
     }
   },
 
@@ -507,16 +725,46 @@ Page({
       return
     }
     
+    // 检查用户权限
+    const app = getApp()
+    const permission = app.checkSearchPermission()
+    
+    if (!permission.canUse) {
+      if (permission.needLogin) {
+        // 需要登录
+        this.showLoginDialog('搜索识别')
+      } else {
+        // 次数用完
+        wx.showModal({
+          title: '使用限制',
+          content: permission.reason,
+          showCancel: false,
+          confirmText: '知道了'
+        })
+      }
+      return
+    }
+    
     this.setData({ loading: true })
     
     try {
       // 使用AI服务搜索食物信息
-      const searchResult = await aiService.searchFoodByName(foodName, {
+      const searchResult = await aiServiceModule.searchFoodByName(foodName, {
         getNutrition: true,
         saveRecord: true
       })
       
       if (searchResult.success) {
+        // 增加搜索使用次数
+        const app = getApp()
+        const newCount = app.incrementSearchCount()
+        
+        // 更新页面状态
+        this.setData({
+          todaySearchCount: newCount,
+          searchRemaining: app.globalData.dailySearchLimit - newCount
+        })
+        
         // 显示搜索结果
         this.showSearchResult(searchResult.data)
         
@@ -1015,53 +1263,347 @@ Page({
     })
   },
 
-  // 直接测试拍照（绕过权限检查）
+  // 测试直接拍照 - 使用新的简化版本
   async testDirectCamera() {
     try {
-      console.log('直接测试拍照...')
+      console.log('测试直接拍照（简化版本）')
       this.setData({ loading: true })
       
-      // 直接调用 wx.chooseMedia
-      const res = await new Promise((resolve, reject) => {
-        wx.chooseMedia({
-          count: 1,
-          mediaType: ['image'],
-          sourceType: ['camera'],
-          sizeType: ['compressed'],
-          camera: 'back',
-          success: resolve,
-          fail: reject
-        })
+      wx.showLoading({
+        title: '测试拍照...',
+        mask: true
       })
       
-      console.log('拍照成功:', res)
+      // 使用新的简化方法
+      await this.openCamera()
       
-      if (res.tempFiles && res.tempFiles.length > 0) {
-        const imageFile = res.tempFiles[0]
-        console.log('图片信息:', imageFile)
+    } catch (error) {
+      console.error('测试拍照失败:', error)
+      wx.showModal({
+        title: '拍照测试',
+        content: `测试完成，结果请查看控制台日志
         
-        // 直接处理图片
-        const result = {
-          files: [{
-            path: imageFile.tempFilePath,
-            size: imageFile.size,
-            width: imageFile.width,
-            height: imageFile.height,
-            type: imageFile.fileType
-          }],
-          processed: false
+错误信息: ${error.message || '无'}`,
+        showCancel: false,
+        confirmText: '好的'
+      })
+    } finally {
+      wx.hideLoading()
+      this.setData({ loading: false })
+    }
+  },
+
+  // 测试图片选择功能 - 简化版本
+  async testImageSelection() {
+    try {
+      console.log('开始测试图片选择功能（简化版本）')
+      this.setData({ loading: true })
+      
+      wx.showLoading({
+        title: '测试图片选择...',
+        mask: true
+      })
+      
+      // 使用新的简化方法
+      await this.chooseImageFromAlbum()
+      
+    } catch (error) {
+      console.error('图片选择测试失败:', error)
+      wx.showModal({
+        title: '图片选择测试',
+        content: `测试完成，结果请查看控制台日志
+        
+错误信息: ${error.message || '无'}`,
+        showCancel: false,
+        confirmText: '好的'
+      })
+    } finally {
+      wx.hideLoading()
+      this.setData({ loading: false })
+    }
+  },
+
+  // 诊断图片选择功能
+  async diagnoseImageSelection() {
+    try {
+      console.log('开始诊断图片选择功能...')
+      this.setData({ loading: true })
+      
+      wx.showLoading({
+        title: '诊断图片选择...',
+        mask: true
+      })
+      
+      // 检查权限
+      const permissions = await this.checkAllPermissions()
+      
+      // 检查 wx.chooseMedia API
+      const chooseMediaAvailable = typeof wx.chooseMedia === 'function'
+      
+      // 检查 wx.compressImage API
+      const compressImageAvailable = typeof wx.compressImage === 'function'
+      
+      wx.hideLoading()
+      
+      // 显示诊断结果
+      const content = `图片选择功能诊断报告：
+      
+权限状态：
+- 相机权限: ${permissions.camera ? '✅ 已授权' : '❌ 未授权'}
+- 相册权限: ${permissions.album ? '✅ 已授权' : '❌ 未授权'}
+
+API可用性：
+- wx.chooseMedia: ${chooseMediaAvailable ? '✅ 可用' : '❌ 不可用'}
+- wx.compressImage: ${compressImageAvailable ? '✅ 可用' : '❌ 不可用'}
+
+当前实现：
+- 使用简化版本（直接调用 wx.chooseMedia）
+- 自动压缩大图片（>500KB）
+- 详细的错误处理
+
+建议操作：
+1. 点击"测试图片选择"按钮测试相册功能
+2. 点击"测试直接拍照"按钮测试相机功能
+3. 查看控制台日志获取详细信息`
+
+      wx.showModal({
+        title: '图片选择功能诊断',
+        content: content,
+        showCancel: false,
+        confirmText: '知道了'
+      })
+      
+      // 在控制台输出详细日志
+      console.log('图片选择功能诊断详情:', {
+        permissions,
+        apiAvailability: {
+          chooseMedia: chooseMediaAvailable,
+          compressImage: compressImageAvailable
+        },
+        currentImplementation: 'simplified_version'
+      })
+      
+    } catch (error) {
+      wx.hideLoading()
+      
+      wx.showModal({
+        title: '诊断失败',
+        content: `诊断过程中出现错误：
+        
+错误信息: ${error.message}`,
+        showCancel: false,
+        confirmText: '关闭'
+      })
+      
+      console.error('图片选择功能诊断失败:', error)
+      
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 检查所有权限
+  async checkAllPermissions() {
+    return new Promise((resolve) => {
+      wx.getSetting({
+        success: (res) => {
+          const authSetting = res.authSetting || {}
+          resolve({
+            camera: authSetting['scope.camera'] === true,
+            album: authSetting['scope.writePhotosAlbum'] === true
+          })
+        },
+        fail: () => {
+          resolve({
+            camera: false,
+            album: false
+          })
         }
+      })
+    })
+  },
+
+  // 诊断AI服务状态
+  async diagnoseAIService() {
+    try {
+      console.log('开始诊断AI服务状态...')
+      this.setData({ loading: true })
+      
+      wx.showLoading({
+        title: '诊断AI服务...',
+        mask: true
+      })
+      
+      // 获取AI服务状态
+      const aiService = require('../../services/ai-service.js')
+      const serviceStatus = aiService.getServiceStatus()
+      
+      // 获取配置
+      const config = require('../../constants/config.js')
+      
+      // 检查云函数状态
+      let cloudFunctionStatus = '未知'
+      try {
+        const secureAIService = require('../../services/secure-ai-service.js')
+        const healthCheck = await secureAIService.healthCheck()
+        cloudFunctionStatus = healthCheck.cloudFunction ? '正常' : '异常'
+      } catch (cloudError) {
+        cloudFunctionStatus = `异常: ${cloudError.message}`
+      }
+      
+      wx.hideLoading()
+      
+      // 显示诊断结果
+      const content = `AI服务诊断报告：
+      
+配置状态：
+- 百度AI: ${serviceStatus.baiduAI.configured ? '✅ 已配置' : '❌ 未配置'}
+- Deepseek API: ${serviceStatus.deepseekAI.configured ? '✅ 已配置' : '❌ 未配置'}
+- 当前服务: ${serviceStatus.currentService}
+- 安全模式: ${serviceStatus.secureMode ? '✅ 是' : '❌ 否'}
+
+云函数状态: ${cloudFunctionStatus}
+
+环境配置：
+- 云环境ID: ${config.cloud?.env || '❌ 未配置'}
+- 调试模式: ${config.debug.enabled ? '✅ 开启' : '❌ 关闭'}
+
+当前问题分析：
+${serviceStatus.secureMode ? 
+  '🔴 问题：启用了安全模式，但云函数可能未部署或配置错误\n  解决方案：\n  1. 部署云函数（http-proxy, baidu-ai）\n  2. 或修改代码使用直接调用模式' : 
+  '🟢 状态：使用直接调用模式，应该可以正常工作\n  如果仍有问题，请测试百度AI直接调用'}
+
+建议操作：
+1. 点击"测试百度AI"按钮验证API密钥
+2. 查看控制台错误日志获取详细信息
+3. 如果使用安全模式，请部署云函数
+4. 如果使用直接模式，请检查网络连接`
+
+      wx.showModal({
+        title: 'AI服务诊断报告',
+        content: content,
+        showCancel: false,
+        confirmText: '知道了'
+      })
+      
+      // 在控制台输出详细日志
+      console.log('AI服务诊断详情:', {
+        serviceStatus,
+        config: {
+          cloudEnv: config.cloud?.env,
+          debugMode: config.debug.enabled,
+          baiduAI: {
+            apiKey: config.baiduAI.apiKey ? '已配置' : '未配置',
+            secretKey: config.baiduAI.secretKey ? '已配置' : '未配置'
+          },
+          deepseekAI: {
+            apiKey: config.deepseekAI.apiKey ? '已配置' : '未配置'
+          }
+        },
+        cloudFunctionStatus
+      })
+      
+    } catch (error) {
+      wx.hideLoading()
+      
+      wx.showModal({
+        title: '诊断失败',
+        content: `诊断过程中出现错误：
         
-        await this.handleProcessedImage(result)
+错误信息: ${error.message}
+        
+请检查：
+1. 代码是否有语法错误
+2. 配置文件是否正确
+3. 网络连接是否正常`,
+        showCancel: false,
+        confirmText: '关闭'
+      })
+      
+      console.error('AI服务诊断失败:', error)
+      
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 测试百度AI直接调用
+  async testBaiduAIDirect() {
+    try {
+      console.log('开始测试百度AI直接调用...')
+      this.setData({ loading: true })
+      
+      wx.showLoading({
+        title: '测试百度AI...',
+        mask: true
+      })
+      
+      // 直接调用百度AI服务
+      const baiduAIService = require('../../services/baidu-ai-service.js')
+      
+      // 使用一个测试图片（可以是本地图片或网络图片）
+      const testImagePath = '/images/default-food.png'
+      
+      console.log('使用测试图片:', testImagePath)
+      
+      const result = await baiduAIService.recognizeFood(testImagePath, {
+        compress: true,
+        getNutrition: true,
+        saveRecord: false
+      })
+      
+      wx.hideLoading()
+      
+      console.log('百度AI测试结果:', result)
+      
+      if (result.success) {
+        wx.showModal({
+          title: '百度AI测试成功',
+          content: `食物识别成功！
+          
+识别结果: ${result.data.foodName}
+置信度: ${result.data.confidence}
+热量: ${result.data.calorie}千卡
+
+营养信息:
+蛋白质: ${result.data.nutrition?.protein || 0}g
+脂肪: ${result.data.nutrition?.fat || 0}g
+碳水: ${result.data.nutrition?.carbohydrate || 0}g`,
+          showCancel: false,
+          confirmText: '好的'
+        })
+        
+        // 显示结果
+        this.showRecognitionResult(testImagePath, null, result.data)
+        
+      } else {
+        wx.showModal({
+          title: '百度AI测试失败',
+          content: `错误: ${result.error || '未知错误'}
+          
+可能的原因:
+1. API密钥错误
+2. 网络连接问题
+3. 百度AI服务不可用`,
+          showCancel: false,
+          confirmText: '知道了'
+        })
       }
       
     } catch (error) {
-      console.error('直接测试拍照失败:', error)
-      wx.showToast({
-        title: '拍照失败: ' + error.errMsg,
-        icon: 'none',
-        duration: 3000
+      wx.hideLoading()
+      
+      wx.showModal({
+        title: '测试异常',
+        content: `异常信息: ${error.message}
+        
+详细错误: ${error.stack || '无堆栈信息'}`,
+        showCancel: false,
+        confirmText: '关闭'
       })
+      
+      console.error('百度AI直接调用测试异常:', error)
+      
     } finally {
       this.setData({ loading: false })
     }
@@ -1283,6 +1825,93 @@ Deepseek API:
     }
   },
 
+  // 显示登录对话框
+  showLoginDialog(featureName = '此功能') {
+    wx.showModal({
+      title: '需要登录',
+      content: `游客无法使用${featureName}，请先登录`,
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 跳转到登录/个人页面
+          wx.navigateTo({
+            url: '/pages/profile/profile'
+          })
+        }
+      }
+    })
+  },
+  
+  // 用户登录
+  async handleUserLogin() {
+    try {
+      const app = getApp()
+      
+      // 这里可以调用微信登录API
+      // 为了简化，我们使用模拟登录
+      const userInfo = {
+        nickName: '用户' + Date.now().toString().slice(-4),
+        avatarUrl: '/images/default-avatar.png',
+        openId: 'user_' + Date.now(),
+        loginTime: Date.now()
+      }
+      
+      const result = await app.userLogin(userInfo)
+      
+      if (result.success) {
+        wx.showToast({
+          title: '登录成功',
+          icon: 'success',
+          duration: 2000
+        })
+        
+        // 更新页面状态
+        this.loadUserStatus()
+        
+        return true
+      } else {
+        wx.showToast({
+          title: result.message,
+          icon: 'none',
+          duration: 3000
+        })
+        return false
+      }
+    } catch (error) {
+      console.error('登录处理失败:', error)
+      wx.showToast({
+        title: '登录失败',
+        icon: 'none',
+        duration: 3000
+      })
+      return false
+    }
+  },
+  
+  // 用户退出
+  handleUserLogout() {
+    const app = getApp()
+    const result = app.userLogout()
+    
+    if (result.success) {
+      wx.showToast({
+        title: '已退出登录',
+        icon: 'success',
+        duration: 2000
+      })
+      
+      // 更新页面状态
+      this.loadUserStatus()
+    } else {
+      wx.showToast({
+        title: result.message,
+        icon: 'none',
+        duration: 3000
+      })
+    }
+  },
+  
   // 页面分享
   onShareAppMessage() {
     return {

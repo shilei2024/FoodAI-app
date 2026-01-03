@@ -1,0 +1,205 @@
+/* pages/test/test.wxss - 图片功能测试页面样式 */
+.container {
+  padding: 20rpx;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* 标题样式 */
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  padding: 30rpx;
+  background: white;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 控制区域 */
+.control-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.action-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 20rpx 30rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  transform: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+  color: white;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+.btn-clear {
+  background: #f0f0f0;
+  color: #666;
+  flex: 1;
+}
+
+.btn-back {
+  background: #333;
+  color: white;
+  flex: 1;
+}
+
+/* 结果区域 */
+.results-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  padding-bottom: 10rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.results-list {
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.result-item {
+  padding: 20rpx;
+  margin-bottom: 15rpx;
+  border-radius: 12rpx;
+  border-left: 8rpx solid #ccc;
+}
+
+.result-success {
+  background: #f0fff4;
+  border-left-color: #48bb78;
+}
+
+.result-error {
+  background: #fff5f5;
+  border-left-color: #f56565;
+}
+
+.result-warning {
+  background: #fffaf0;
+  border-left-color: #ed8936;
+}
+
+.result-info {
+  background: #ebf8ff;
+  border-left-color: #4299e1;
+}
+
+.result-time {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 5rpx;
+}
+
+.result-message {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.4;
+}
+
+.empty-results {
+  text-align: center;
+  padding: 60rpx 20rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 说明区域 */
+.info-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.info-content text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  padding-left: 20rpx;
+  position: relative;
+}
+
+.info-content text::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-weight: bold;
+}

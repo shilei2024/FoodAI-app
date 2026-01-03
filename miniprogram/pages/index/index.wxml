@@ -6,6 +6,84 @@
     <text class="subtitle">智能食物识别与营养分析</text>
   </view>
   
+  <!-- 用户状态区域 -->
+  <view class="user-status-section">
+    <view class="user-status-card">
+      <!-- 用户头像和状态 -->
+      <view class="user-info-row">
+        <image 
+          src="{{userInfo && userInfo.avatarUrl ? userInfo.avatarUrl : '/images/default-avatar.png'}}" 
+          class="user-avatar"
+        />
+        <view class="user-details">
+          <view class="user-name-row">
+            <text class="user-name">
+              {{isLoggedIn ? (userInfo && userInfo.nickName ? userInfo.nickName : '已登录用户') : '游客'}}
+            </text>
+            <van-tag 
+              type="{{isLoggedIn ? 'success' : 'warning'}}" 
+              size="mini"
+              custom-class="status-tag"
+            >
+              {{isLoggedIn ? '已登录' : '游客'}}
+            </van-tag>
+          </view>
+          <text class="user-status-text">
+            {{isLoggedIn ? '欢迎使用AI轻食记' : '请登录后使用完整功能'}}
+          </text>
+        </view>
+        <view class="user-actions">
+          <van-button 
+            type="{{isLoggedIn ? 'default' : 'primary'}}" 
+            size="mini"
+            bindtap="{{isLoggedIn ? 'handleUserLogout' : 'handleUserLogin'}}"
+            custom-class="user-action-btn"
+          >
+            {{isLoggedIn ? '退出' : '登录'}}
+          </van-button>
+        </view>
+      </view>
+      
+      <!-- 使用次数统计 -->
+      <view class="usage-stats">
+        <view class="usage-item">
+          <van-icon name="photograph" size="16" color="#07c160" />
+          <text class="usage-label">拍照识别</text>
+          <text class="usage-count">
+            {{todayPhotoCount}}/{{dailyPhotoLimit}}次
+          </text>
+          <text class="usage-remaining" wx:if="{{photoRemaining > 0}}">
+            剩余{{photoRemaining}}次
+          </text>
+          <text class="usage-remaining zero" wx:else>
+            已用完
+          </text>
+        </view>
+        <view class="usage-item">
+          <van-icon name="search" size="16" color="#1989fa" />
+          <text class="usage-label">搜索识别</text>
+          <text class="usage-count">
+            {{todaySearchCount}}/{{dailySearchLimit}}次
+          </text>
+          <text class="usage-remaining" wx:if="{{searchRemaining > 0}}">
+            剩余{{searchRemaining}}次
+          </text>
+          <text class="usage-remaining zero" wx:else>
+            已用完
+          </text>
+        </view>
+      </view>
+      
+      <!-- 游客提示 -->
+      <view class="guest-notice" wx:if="{{isGuest}}">
+        <van-icon name="info-o" size="14" color="#ff976a" />
+        <text class="notice-text">
+          游客状态：所有功能均无法使用，请登录后使用基础功能
+        </text>
+      </view>
+    </view>
+  </view>
+  
   <!-- 主要内容区域 -->
   <view class="main-content">
     <!-- 大圆形拍照按钮 -->
@@ -223,9 +301,4 @@
   <!-- Dialog对话框 -->
   <van-dialog id="van-dialog" />
   
-  <!-- 调试按钮（开发时使用） -->
-  <view class="debug-buttons" wx:if="{{debugMode}}">
-    <button bindtap="testDirectCamera" size="mini">测试直接拍照</button>
-    <button bindtap="testDeepseekAPI" size="mini" style="margin-top: 10rpx;">测试Deepseek API</button>
-  </view>
 </view>

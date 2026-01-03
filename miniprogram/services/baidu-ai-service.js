@@ -65,12 +65,32 @@ class BaiduAIService {
     }
     
     try {
-      const tokenUrl = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${this.config.apiKey}&client_secret=${this.config.secretKey}`
+      const tokenUrl = 'https://aip.baidubce.com/oauth/2.0/token'
       
       console.log('请求百度AI access_token...')
-      const response = await this.api.get(tokenUrl, {}, {
-        showLoading: false,
-        silent: true
+      
+      // 关键：使用原生wx.request，不使用封装的api.get
+      const response = await new Promise((resolve, reject) => {
+        wx.request({
+          url: tokenUrl,
+          method: 'GET',
+          data: {
+            grant_type: 'client_credentials',
+            client_id: this.config.apiKey,
+            client_secret: this.config.secretKey
+          },
+          success: (res) => {
+            if (res.statusCode === 200) {
+              resolve(res.data)  // ✅ 直接返回data部分
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${JSON.stringify(res.data)}`))
+            }
+          },
+          fail: (err) => {
+            console.error('wx.request失败:', err)
+            reject(err)
+          }
+        })
       })
       
       if (response && response.access_token) {
@@ -85,15 +105,20 @@ class BaiduAIService {
           refreshTime: now
         }
         
-        console.log('获取access_token成功，有效期:', expiresIn, '秒')
+        console.log('获取access_token成功:', token.substring(0, 20) + '...')
+        console.log('有效期:', expiresIn, '秒')
         return token
         
       } else {
-        throw new Error('获取access_token失败: ' + (response.error_description || '未知错误'))
+        console.error('百度AI返回错误数据:', response)
+        throw new Error('获取access_token失败: ' + (response.error_description || JSON.stringify(response)))
       }
       
     } catch (error) {
       console.error('获取百度AI access_token失败:', error)
+      
+      // 清理缓存，下次重新获取
+      this.accessTokenCache = {}
       
       // 提供更友好的错误提示
       let errorMessage = '获取百度AI访问令牌失败'
@@ -174,12 +199,25 @@ class BaiduAIService {
       const recognitionUrl = `${this.config.recognition.url}?access_token=${accessToken}`
       
       console.log('调用百度AI食物识别接口...')
-      const response = await this.api.post(recognitionUrl, params, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        showLoading: false,
-        silent: true
+      
+      // 直接使用wx.request调用百度AI API，避免通用API客户端的格式处理
+      const response = await new Promise((resolve, reject) => {
+        wx.request({
+          url: recognitionUrl,
+          method: 'POST',
+          header: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          data: params,
+          success: (res) => {
+            console.log('百度AI API响应:', res)
+            resolve(res.data)
+          },
+          fail: (error) => {
+            console.error('百度AI API请求失败:', error)
+            reject(new Error(`网络请求失败: ${error.errMsg}`))
+          }
+        })
       })
       
       // 处理响应
@@ -252,12 +290,25 @@ class BaiduAIService {
       const recognitionUrl = `${this.config.generalRecognition.url}?access_token=${accessToken}`
       
       console.log('调用百度AI通用物体识别接口...')
-      const response = await this.api.post(recognitionUrl, params, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        showLoading: false,
-        silent: true
+      
+      // 直接使用wx.request调用百度AI API
+      const response = await new Promise((resolve, reject) => {
+        wx.request({
+          url: recognitionUrl,
+          method: 'POST',
+          header: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          data: params,
+          success: (res) => {
+            console.log('百度AI通用识别API响应:', res)
+            resolve(res.data)
+          },
+          fail: (error) => {
+            console.error('百度AI通用识别API请求失败:', error)
+            reject(new Error(`网络请求失败: ${error.errMsg}`))
+          }
+        })
       })
       
       // 处理响应
@@ -294,10 +345,24 @@ class BaiduAIService {
    * @returns {Object} 处理后的结果
    */
   processFoodRecognitionResponse(response, metadata = {}) {
-    if (!response || response.error_code) {
-      throw new Error(`百度AI识别失败: ${response.error_msg || '未知错误'}`)
+    console.log('处理百度AI食物识别响应:', response)
+    
+    // 检查百度AI API的错误响应格式
+    if (!response) {
+      throw new Error('百度AI识别失败: 无响应')
     }
     
+    // 百度AI API错误格式1: error_code字段
+    if (response.error_code) {
+      throw new Error(`百度AI识别失败: ${response.error_msg || `错误码: ${response.error_code}`}`)
+    }
+    
+    // 百度AI API错误格式2: error字段
+    if (response.error) {
+      throw new Error(`百度AI识别失败: ${response.error_description || response.error}`)
+    }
+    
+    // 检查是否有识别结果
     if (!response.result || response.result.length === 0) {
       throw new Error('未识别到食物，请尝试重新拍照')
     }
@@ -341,10 +406,24 @@ class BaiduAIService {
    * @returns {Object} 处理后的结果
    */
   processGeneralRecognitionResponse(response, metadata = {}) {
-    if (!response || response.error_code) {
-      throw new Error(`百度AI通用识别失败: ${response.error_msg || '未知错误'}`)
+    console.log('处理百度AI通用识别响应:', response)
+    
+    // 检查百度AI API的错误响应格式
+    if (!response) {
+      throw new Error('百度AI通用识别失败: 无响应')
     }
     
+    // 百度AI API错误格式1: error_code字段
+    if (response.error_code) {
+      throw new Error(`百度AI通用识别失败: ${response.error_msg || `错误码: ${response.error_code}`}`)
+    }
+    
+    // 百度AI API错误格式2: error字段
+    if (response.error) {
+      throw new Error(`百度AI通用识别失败: ${response.error_description || response.error}`)
+    }
+    
+    // 检查是否有识别结果
     if (!response.result || response.result.length === 0) {
       throw new Error('未识别到物体，请尝试重新拍照')
     }

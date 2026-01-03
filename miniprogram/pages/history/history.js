@@ -11,7 +11,7 @@ Page({
     loading: false,
     hasMore: true,
     page: 1,
-    pageSize: 10,
+    pageSize: 20,
     // 统计数据
     stats: {
       total: 0,
@@ -28,6 +28,7 @@ Page({
 
   onShow() {
     // 页面显示时执行
+    // 每次显示页面时刷新数据，确保从详情页返回时数据是最新的
     this.refreshData()
   },
 
@@ -70,7 +71,8 @@ Page({
       })
 
       if (result.success) {
-        const newList = this.data.historyList.concat(this.formatHistoryData(result.data))
+        const formattedData = this.formatHistoryData(result.data)
+        const newList = this.data.historyList.concat(formattedData)
         
         // 获取统计数据
         const stats = dataService.getStats()
@@ -87,6 +89,8 @@ Page({
             month: stats.month || 0
           }
         })
+        
+        console.log('加载历史数据成功，共', newList.length, '条记录')
       } else {
         throw new Error(result.error || '加载数据失败')
       }
@@ -157,16 +161,26 @@ Page({
         timeText = `${month}-${day} ${hours}:${minutes}`
       }
       
+      // 判断记录类型
+      let type = 'manual'
+      if (record.source === 'ai_recognition' || record.searchType === 'photo') {
+        type = 'ai'
+      } else if (record.source === 'text_search' || record.searchType === 'text') {
+        type = 'search'
+      }
+      
       return {
         id: record.id || record.localId,
         foodName: record.foodName || '未知食物',
-        calories: record.calorie || 0,
-        image: record.imagePath || '',
+        calories: record.calorie || record.calories || 0,
+        image: record.imageUrl || record.imagePath || '',
         time: timeText,
-        type: record.source === 'ai' ? 'ai' : 'manual',
+        type: type,
+        source: record.source || '',
         tags: record.tags || [],
         confidence: record.confidence || 0,
         nutrition: record.nutrition || {},
+        description: record.description || '',
         rawData: record
       }
     })
@@ -181,12 +195,41 @@ Page({
     }
   },
 
+  // 阻止事件冒泡
+  stopPropagation() {
+    // 空函数，仅用于阻止事件冒泡
+  },
+
   // 查看详情
   viewDetail(e) {
-    const { id } = e.currentTarget.dataset
-    wx.navigateTo({
-      url: `/pages/detail/detail?id=${id}&from=history`
-    })
+    const { id, index } = e.currentTarget.dataset
+    const item = this.data.historyList[index]
+    
+    if (item && item.rawData) {
+      // 传递完整的食物数据
+      const foodData = {
+        name: item.foodName,
+        imageUrl: item.image || '',
+        calories: item.calories || 0,
+        description: item.description || item.rawData.description || `这是${item.foodName}的详细信息`,
+        nutrition: item.nutrition || item.rawData.nutrition || {},
+        confidence: item.confidence || 0,
+        tags: item.tags || [],
+        source: item.source || 'history',
+        healthScore: item.rawData.healthScore || 70,
+        suggestions: item.rawData.suggestions || [],
+        searchData: item.rawData
+      }
+      
+      wx.navigateTo({
+        url: `/pages/detail/detail?food=${encodeURIComponent(JSON.stringify(foodData))}&from=history`
+      })
+    } else {
+      // 如果没有完整数据，使用ID查询
+      wx.navigateTo({
+        url: `/pages/detail/detail?id=${id}&from=history`
+      })
+    }
   },
 
   // 删除记录
@@ -209,15 +252,14 @@ Page({
       const result = await dataService.deleteRecognitionRecord(id)
       
       if (result.success) {
-        // 更新本地列表
-        const newList = this.data.historyList.filter(item => item.id !== id)
-        this.setData({ historyList: newList })
-        
         wx.showToast({
           title: '删除成功',
           icon: 'success',
           duration: 2000
         })
+        
+        // 刷新数据
+        this.refreshData()
       } else {
         throw new Error(result.error || '删除失败')
       }
@@ -233,6 +275,15 @@ Page({
 
   // 清空历史
   clearHistory() {
+    if (this.data.historyList.length === 0) {
+      wx.showToast({
+        title: '暂无记录可清空',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
     wx.showModal({
       title: '确认清空',
       content: '确定要清空所有历史记录吗？此操作不可恢复',
@@ -242,17 +293,14 @@ Page({
             const result = await dataService.clearRecognitionRecords()
             
             if (result.success) {
-              this.setData({ 
-                historyList: [],
-                page: 1,
-                hasMore: false
-              })
-              
               wx.showToast({
                 title: `已清空 ${result.deletedCount} 条记录`,
                 icon: 'success',
                 duration: 2000
               })
+              
+              // 刷新数据
+              this.refreshData()
             } else {
               throw new Error(result.error || '清空失败')
             }
@@ -271,6 +319,15 @@ Page({
 
   // 导出数据
   async exportData() {
+    if (this.data.historyList.length === 0) {
+      wx.showToast({
+        title: '暂无数据可导出',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
     try {
       wx.showLoading({
         title: '准备导出...',
@@ -284,22 +341,36 @@ Page({
         const filePath = `${wx.env.USER_DATA_PATH}/foodai_history_${Date.now()}.json`
         const fs = wx.getFileSystemManager()
         
-        fs.writeFileSync(filePath, result.data, 'utf8')
-        
-        // 分享或保存到相册
-        wx.saveFile({
-          tempFilePath: filePath,
-          success: (res) => {
+        fs.writeFile({
+          filePath: filePath,
+          data: result.data,
+          encoding: 'utf8',
+          success: () => {
             wx.hideLoading()
             wx.showModal({
               title: '导出成功',
-              content: `已导出 ${result.count} 条记录\n文件已保存到: ${res.savedFilePath}`,
-              showCancel: false,
-              confirmText: '确定'
+              content: `已导出 ${result.count} 条记录\n\n文件已保存到小程序本地存储`,
+              showCancel: true,
+              cancelText: '关闭',
+              confirmText: '复制路径',
+              success: (modalRes) => {
+                if (modalRes.confirm) {
+                  wx.setClipboardData({
+                    data: filePath,
+                    success: () => {
+                      wx.showToast({
+                        title: '路径已复制',
+                        icon: 'success'
+                      })
+                    }
+                  })
+                }
+              }
             })
           },
           fail: (error) => {
             wx.hideLoading()
+            console.error('写入文件失败:', error)
             wx.showToast({
               title: '保存文件失败',
               icon: 'none',

@@ -1,0 +1,139 @@
+/* pages/privacy/privacy.wxss */
+.container {
+  padding: 20rpx;
+  background: #f5f7fa;
+  min-height: 100vh;
+  padding-bottom: 120rpx; /* 为底部按钮留出空间 */
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 20rpx;
+  background: white;
+  border-radius: 20rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.header-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 描述区域 */
+.description {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.desc-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.desc-content {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 区域 */
+.section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.section-title text {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-left: 10rpx;
+}
+
+/* 隐私提示 */
+.tips {
+  background: #fff8e1;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  border-left: 6rpx solid #ffc107;
+}
+
+.tip-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 20rpx;
+}
+
+.tip-content {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+  line-height: 1.6;
+}
+
+/* 操作栏 */
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx;
+  background: white;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 15rpx;
+    padding-bottom: 120rpx;
+  }
+  
+  .header,
+  .description,
+  .section,
+  .tips {
+    padding: 20rpx;
+  }
+  
+  .header-title {
+    font-size: 28rpx;
+  }
+  
+  .desc-title {
+    font-size: 26rpx;
+  }
+  
+  .section-title text {
+    font-size: 26rpx;
+  }
+  
+  .action-bar {
+    padding: 15rpx;
+  }
+}

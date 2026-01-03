@@ -8,7 +8,16 @@ App({
     isVip: false,
     vipExpireDate: null,
     systemInfo: null,
-    networkType: 'unknown'
+    networkType: 'unknown',
+    // 新增：用户状态相关
+    isLoggedIn: false,
+    isGuest: true,
+    userStatus: 'guest', // guest, logged_in, vip
+    // 新增：使用次数限制
+    dailyPhotoLimit: 5, // 拍照识别每天5次
+    dailySearchLimit: 10, // 搜索识别每天10次
+    todayPhotoCount: 0,
+    todaySearchCount: 0
   },
 
   // 应用启动时执行
@@ -75,6 +84,9 @@ App({
   // 初始化云开发
   initCloud() {
     try {
+      // 临时禁用云开发，解决手机预览问题
+      // 如需启用云开发，请取消注释以下代码
+      /*
       // 检查是否支持云开发
       if (wx.cloud) {
         // 初始化云开发
@@ -92,6 +104,8 @@ App({
       } else {
         console.warn('当前版本不支持云开发')
       }
+      */
+      console.log('云开发已临时禁用（解决手机预览问题）')
     } catch (error) {
       console.error('云开发初始化失败:', error)
     }
@@ -221,6 +235,14 @@ App({
     
     if (userInfo) {
       this.globalData.userInfo = userInfo
+      this.globalData.isLoggedIn = true
+      this.globalData.isGuest = false
+      this.globalData.userStatus = 'logged_in'
+    } else {
+      this.globalData.userInfo = null
+      this.globalData.isLoggedIn = false
+      this.globalData.isGuest = true
+      this.globalData.userStatus = 'guest'
     }
     
     if (vipInfo) {
@@ -236,7 +258,15 @@ App({
           wx.setStorageSync('userVipInfo', { isVip: false })
         }
       }
+      
+      // 如果是VIP用户，更新状态
+      if (this.globalData.isVip) {
+        this.globalData.userStatus = 'vip'
+      }
     }
+    
+    // 加载今日使用次数
+    this.loadTodayUsage()
   },
 
   // 更新用户状态
@@ -317,6 +347,188 @@ App({
       expireDate: this.globalData.vipExpireDate
     }
     wx.setStorageSync('userVipInfo', vipInfo)
+    
+    // 保存今日使用次数
+    this.saveTodayUsage()
+  },
+  
+  // 加载今日使用次数
+  loadTodayUsage() {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const usageKey = `daily_usage_${today}`
+      const usageData = wx.getStorageSync(usageKey)
+      
+      if (usageData) {
+        this.globalData.todayPhotoCount = usageData.photoCount || 0
+        this.globalData.todaySearchCount = usageData.searchCount || 0
+      } else {
+        this.globalData.todayPhotoCount = 0
+        this.globalData.todaySearchCount = 0
+      }
+      
+      console.log('加载今日使用次数:', {
+        photoCount: this.globalData.todayPhotoCount,
+        searchCount: this.globalData.todaySearchCount
+      })
+    } catch (error) {
+      console.error('加载今日使用次数失败:', error)
+      this.globalData.todayPhotoCount = 0
+      this.globalData.todaySearchCount = 0
+    }
+  },
+  
+  // 保存今日使用次数
+  saveTodayUsage() {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const usageKey = `daily_usage_${today}`
+      const usageData = {
+        photoCount: this.globalData.todayPhotoCount,
+        searchCount: this.globalData.todaySearchCount,
+        saveTime: Date.now()
+      }
+      
+      wx.setStorageSync(usageKey, usageData)
+      console.log('保存今日使用次数:', usageData)
+    } catch (error) {
+      console.error('保存今日使用次数失败:', error)
+    }
+  },
+  
+  // 增加拍照使用次数
+  incrementPhotoCount() {
+    this.globalData.todayPhotoCount++
+    this.saveTodayUsage()
+    return this.globalData.todayPhotoCount
+  },
+  
+  // 增加搜索使用次数
+  incrementSearchCount() {
+    this.globalData.todaySearchCount++
+    this.saveTodayUsage()
+    return this.globalData.todaySearchCount
+  },
+  
+  // 检查拍照使用权限
+  checkPhotoPermission() {
+    const app = this
+    
+    // 检查登录状态
+    if (app.globalData.isGuest) {
+      return {
+        canUse: false,
+        reason: '请先登录',
+        remaining: 0,
+        limit: app.globalData.dailyPhotoLimit,
+        needLogin: true
+      }
+    }
+    
+    // 检查使用次数
+    const remaining = app.globalData.dailyPhotoLimit - app.globalData.todayPhotoCount
+    
+    if (remaining <= 0) {
+      return {
+        canUse: false,
+        reason: '今日拍照识别次数已用完',
+        remaining: 0,
+        limit: app.globalData.dailyPhotoLimit,
+        needLogin: false
+      }
+    }
+    
+    return {
+      canUse: true,
+      reason: '',
+      remaining: remaining,
+      limit: app.globalData.dailyPhotoLimit,
+      needLogin: false
+    }
+  },
+  
+  // 检查搜索使用权限
+  checkSearchPermission() {
+    const app = this
+    
+    // 检查登录状态
+    if (app.globalData.isGuest) {
+      return {
+        canUse: false,
+        reason: '请先登录',
+        remaining: 0,
+        limit: app.globalData.dailySearchLimit,
+        needLogin: true
+      }
+    }
+    
+    // 检查使用次数
+    const remaining = app.globalData.dailySearchLimit - app.globalData.todaySearchCount
+    
+    if (remaining <= 0) {
+      return {
+        canUse: false,
+        reason: '今日搜索识别次数已用完',
+        remaining: 0,
+        limit: app.globalData.dailySearchLimit,
+        needLogin: false
+      }
+    }
+    
+    return {
+      canUse: true,
+      reason: '',
+      remaining: remaining,
+      limit: app.globalData.dailySearchLimit,
+      needLogin: false
+    }
+  },
+  
+  // 用户登录
+  async userLogin(userInfo) {
+    try {
+      this.globalData.userInfo = userInfo
+      this.globalData.isLoggedIn = true
+      this.globalData.isGuest = false
+      this.globalData.userStatus = 'logged_in'
+      
+      // 保存用户信息
+      wx.setStorageSync('userInfo', userInfo)
+      
+      // 重置今日使用次数（新用户登录）
+      this.globalData.todayPhotoCount = 0
+      this.globalData.todaySearchCount = 0
+      this.saveTodayUsage()
+      
+      console.log('用户登录成功:', userInfo)
+      return { success: true, message: '登录成功' }
+    } catch (error) {
+      console.error('用户登录失败:', error)
+      return { success: false, message: '登录失败: ' + error.message }
+    }
+  },
+  
+  // 用户退出
+  userLogout() {
+    try {
+      // 清除用户信息
+      this.globalData.userInfo = null
+      this.globalData.isLoggedIn = false
+      this.globalData.isGuest = true
+      this.globalData.userStatus = 'guest'
+      this.globalData.isVip = false
+      this.globalData.vipExpireDate = null
+      
+      // 清除缓存
+      wx.removeStorageSync('userInfo')
+      wx.removeStorageSync('userVipInfo')
+      
+      console.log('用户退出成功')
+      return { success: true, message: '退出成功' }
+    } catch (error) {
+      console.error('用户退出失败:', error)
+      return { success: false, message: '退出失败: ' + error.message }
+    }
   },
 
   // 处理分享入口

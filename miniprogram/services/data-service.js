@@ -362,6 +362,20 @@ class DataService {
   }
 
   /**
+   * 获取总记录数
+   * @returns {number} 总记录数
+   */
+  getTotalRecordCount() {
+    try {
+      const records = wx.getStorageSync('recognition_records') || []
+      return records.length
+    } catch (error) {
+      console.error('获取总记录数失败:', error)
+      return 0
+    }
+  }
+
+  /**
    * 获取统计数据
    * @returns {Object} 统计数据
    */
@@ -574,6 +588,7 @@ module.exports = {
   
   // 数据管理
   getStats: () => dataService.getStats(),
+  getTotalRecordCount: () => dataService.getTotalRecordCount(),
   exportData: (format) => dataService.exportData(format),
   importData: (data, format) => dataService.importData(data, format),
   

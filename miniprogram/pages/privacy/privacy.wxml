@@ -1,0 +1,91 @@
+<!--pages/privacy/privacy.wxml-->
+<view class="container">
+  <!-- 头部 -->
+  <view class="header">
+    <van-icon name="arrow-left" size="24" bindtap="goBack" />
+    <text class="header-title">隐私设置</text>
+    <view style="width: 24rpx;"></view> <!-- 占位 -->
+  </view>
+
+  <!-- 隐私设置说明 -->
+  <view class="description">
+    <text class="desc-title">隐私设置说明</text>
+    <text class="desc-content">您可以在这里管理个人数据的收集和使用方式。我们承诺保护您的隐私，所有设置都会立即生效。</text>
+  </view>
+
+  <!-- 隐私设置 -->
+  <view class="section">
+    <view class="section-title">
+      <van-icon name="setting-o" size="18" />
+      <text>隐私权限</text>
+    </view>
+    <van-cell-group>
+      <van-cell 
+        wx:for="{{privacySettings}}" 
+        wx:key="id"
+        title="{{item.title}}"
+        label="{{item.desc}}"
+        icon="{{item.icon}}"
+      >
+        <view slot="right-icon">
+          <van-switch 
+            wx:if="{{item.type === 'switch'}}"
+            size="20" 
+            checked="{{item.value}}" 
+            bind:change="onPrivacySettingChange"
+            data-id="{{item.id}}"
+          />
+          <van-button 
+            wx:else
+            size="mini" 
+            type="primary"
+          >
+            {{item.value}}
+          </van-button>
+        </view>
+      </van-cell>
+    </van-cell-group>
+  </view>
+
+  <!-- 数据管理 -->
+  <view class="section">
+    <view class="section-title">
+      <van-icon name="database" size="18" />
+      <text>数据管理</text>
+    </view>
+    <van-cell-group>
+      <van-cell 
+        wx:for="{{dataManagement}}" 
+        wx:key="id"
+        title="{{item.title}}"
+        label="{{item.desc}}"
+        icon="{{item.icon}}"
+        is-link
+        bindtap="handleDataManagement"
+        data-id="{{item.id}}"
+      />
+    </van-cell-group>
+  </view>
+
+  <!-- 隐私提示 -->
+  <view class="tips">
+    <text class="tip-title">隐私保护提示：</text>
+    <text class="tip-content">• 我们仅收集必要的服务数据</text>
+    <text class="tip-content">• 您可以随时撤回数据授权</text>
+    <text class="tip-content">• 所有数据都经过加密处理</text>
+    <text class="tip-content">• 我们不会出售您的个人数据</text>
+    <text class="tip-content">• 定期查看隐私政策了解最新变化</text>
+  </view>
+
+  <!-- 保存按钮 -->
+  <view class="action-bar">
+    <van-button 
+      type="primary" 
+      size="large" 
+      round
+      bindtap="savePrivacySettings"
+    >
+      保存设置
+    </van-button>
+  </view>
+</view>

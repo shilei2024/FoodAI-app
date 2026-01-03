@@ -23,6 +23,12 @@ Page({
     // 页面加载时执行
     const { id, type, from, food } = options
     
+    // 启用分享到朋友圈
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline']
+    })
+    
     if (type === 'ai') {
       this.setData({ pageType: 'ai' })
       this.initAIRecognition()
@@ -126,15 +132,20 @@ Page({
   
   // 获取营养分类数据
   getNutritionCategories(foodData) {
-    const nutrition = foodData.nutrition || foodData.searchData?.nutrition || {}
+    console.log('getNutritionCategories 输入数据:', foodData)
+    
     const allNutrition = foodData.allNutrition || {}
     
     // 如果已经有分类数据（检查是否是分类对象格式），直接使用
     if (allNutrition && typeof allNutrition === 'object' && !Array.isArray(allNutrition)) {
-      // 检查是否是分类对象（包含basic、vitamin、mineral等属性）
-      if (allNutrition.basic !== undefined || allNutrition.vitamin !== undefined || 
-          allNutrition.mineral !== undefined || allNutrition.other !== undefined) {
-        // 确保所有分类都存在（即使为空数组）
+      // 检查是否是分类对象（包含basic、vitamin、mineral等属性，且至少有一个非空数组）
+      const hasBasic = Array.isArray(allNutrition.basic) && allNutrition.basic.length > 0
+      const hasVitamin = Array.isArray(allNutrition.vitamin) && allNutrition.vitamin.length > 0
+      const hasMineral = Array.isArray(allNutrition.mineral) && allNutrition.mineral.length > 0
+      const hasOther = Array.isArray(allNutrition.other) && allNutrition.other.length > 0
+      
+      if (hasBasic || hasVitamin || hasMineral || hasOther) {
+        console.log('使用已分类的 allNutrition 数据')
         return {
           basic: allNutrition.basic || [],
           vitamin: allNutrition.vitamin || [],
@@ -144,7 +155,33 @@ Page({
       }
     }
     
-    // 否则从nutrition对象中提取
+    // 尝试从多个来源获取 nutrition 数据
+    let nutrition = {}
+    
+    // 优先级1：直接的 nutrition 对象（如果是对象而非数组）
+    if (foodData.nutrition && typeof foodData.nutrition === 'object' && !Array.isArray(foodData.nutrition)) {
+      nutrition = foodData.nutrition
+    }
+    // 优先级2：searchData 中的 nutrition
+    else if (foodData.searchData?.nutrition && typeof foodData.searchData.nutrition === 'object') {
+      nutrition = foodData.searchData.nutrition
+    }
+    // 优先级3：aiData 中的 nutrition
+    else if (foodData.aiData?.nutrition && typeof foodData.aiData.nutrition === 'object') {
+      nutrition = foodData.aiData.nutrition
+    }
+    // 优先级4：如果 nutrition 是数组，转换为对象
+    else if (Array.isArray(foodData.nutrition)) {
+      nutrition = this.nutritionArrayToObject(foodData.nutrition)
+    }
+    // 优先级5：如果 allNutrition 是数组，转换为对象
+    else if (Array.isArray(allNutrition)) {
+      nutrition = this.nutritionArrayToObject(allNutrition)
+    }
+    
+    console.log('解析后的 nutrition 对象:', nutrition)
+    
+    // 从nutrition对象中提取分类数据
     const categories = {
       basic: [],
       vitamin: [],
@@ -152,99 +189,145 @@ Page({
       other: []
     }
     
-    // 基础物质
-    if (nutrition.protein !== undefined) {
-      categories.basic.push({ label: '蛋白质', value: nutrition.protein, unit: 'g' })
-    }
-    if (nutrition.fat !== undefined) {
-      categories.basic.push({ label: '脂肪', value: nutrition.fat, unit: 'g' })
-    }
-    if (nutrition.carbohydrate !== undefined) {
-      categories.basic.push({ label: '碳水化合物', value: nutrition.carbohydrate, unit: 'g' })
-    }
-    if (nutrition.fiber !== undefined) {
-      categories.basic.push({ label: '膳食纤维', value: nutrition.fiber, unit: 'g' })
-    }
-    if (nutrition.water !== undefined) {
-      categories.basic.push({ label: '水分', value: nutrition.water, unit: 'g' })
+    // 辅助函数：添加营养成分（值为undefined时不添加，值为0时保留显示）
+    const addNutrient = (category, label, value, unit) => {
+      if (value !== undefined && value !== null) {
+        categories[category].push({ label, value, unit })
+      }
     }
     
-    // 维生素（即使值为0也要显示）
-    if (nutrition.vitaminA !== undefined && nutrition.vitaminA !== null) {
-      categories.vitamin.push({ label: '维生素A', value: nutrition.vitaminA, unit: 'μg' })
-    }
-    if (nutrition.vitaminC !== undefined && nutrition.vitaminC !== null) {
-      categories.vitamin.push({ label: '维生素C', value: nutrition.vitaminC, unit: 'mg' })
-    }
-    if (nutrition.vitaminD !== undefined && nutrition.vitaminD !== null) {
-      categories.vitamin.push({ label: '维生素D', value: nutrition.vitaminD, unit: 'μg' })
-    }
-    if (nutrition.vitaminE !== undefined && nutrition.vitaminE !== null) {
-      categories.vitamin.push({ label: '维生素E', value: nutrition.vitaminE, unit: 'mg' })
-    }
-    if (nutrition.vitaminK !== undefined && nutrition.vitaminK !== null) {
-      categories.vitamin.push({ label: '维生素K', value: nutrition.vitaminK, unit: 'μg' })
-    }
-    if (nutrition.vitaminB1 !== undefined && nutrition.vitaminB1 !== null) {
-      categories.vitamin.push({ label: '维生素B1', value: nutrition.vitaminB1, unit: 'mg' })
-    }
-    if (nutrition.vitaminB2 !== undefined && nutrition.vitaminB2 !== null) {
-      categories.vitamin.push({ label: '维生素B2', value: nutrition.vitaminB2, unit: 'mg' })
-    }
-    if (nutrition.vitaminB6 !== undefined && nutrition.vitaminB6 !== null) {
-      categories.vitamin.push({ label: '维生素B6', value: nutrition.vitaminB6, unit: 'mg' })
-    }
-    if (nutrition.vitaminB12 !== undefined && nutrition.vitaminB12 !== null) {
-      categories.vitamin.push({ label: '维生素B12', value: nutrition.vitaminB12, unit: 'μg' })
-    }
-    if (nutrition.niacin !== undefined && nutrition.niacin !== null) {
-      categories.vitamin.push({ label: '烟酸(B3)', value: nutrition.niacin, unit: 'mg' })
-    }
-    if (nutrition.folate !== undefined && nutrition.folate !== null) {
-      categories.vitamin.push({ label: '叶酸', value: nutrition.folate, unit: 'μg' })
-    }
+    // 基础物质（热量、三大营养素等）
+    addNutrient('basic', '热量', nutrition.calories || nutrition.calorie, '千卡')
+    addNutrient('basic', '蛋白质', nutrition.protein, 'g')
+    addNutrient('basic', '脂肪', nutrition.fat, 'g')
+    addNutrient('basic', '碳水化合物', nutrition.carbohydrate || nutrition.carbs, 'g')
+    addNutrient('basic', '膳食纤维', nutrition.fiber, 'g')
+    addNutrient('basic', '水分', nutrition.water, 'g')
+    addNutrient('basic', '灰分', nutrition.ash, 'g')
     
-    // 确保返回的categories对象包含所有分类（即使为空数组）
+    // 维生素（全面的维生素列表）
+    // 脂溶性维生素
+    addNutrient('vitamin', '维生素A', nutrition.vitaminA, 'μg')
+    addNutrient('vitamin', '视黄醇', nutrition.retinol, 'μg')
+    addNutrient('vitamin', 'β-胡萝卜素', nutrition.betaCarotene, 'μg')
+    addNutrient('vitamin', '维生素D', nutrition.vitaminD, 'μg')
+    addNutrient('vitamin', '维生素E', nutrition.vitaminE, 'mg')
+    addNutrient('vitamin', 'α-生育酚', nutrition.alphaTocopherol, 'mg')
+    addNutrient('vitamin', '维生素K', nutrition.vitaminK, 'μg')
     
-    // 矿物质
-    if (nutrition.calcium !== undefined) {
-      categories.mineral.push({ label: '钙', value: nutrition.calcium, unit: 'mg' })
-    }
-    if (nutrition.iron !== undefined) {
-      categories.mineral.push({ label: '铁', value: nutrition.iron, unit: 'mg' })
-    }
-    if (nutrition.zinc !== undefined) {
-      categories.mineral.push({ label: '锌', value: nutrition.zinc, unit: 'mg' })
-    }
-    if (nutrition.potassium !== undefined) {
-      categories.mineral.push({ label: '钾', value: nutrition.potassium, unit: 'mg' })
-    }
-    if (nutrition.sodium !== undefined) {
-      categories.mineral.push({ label: '钠', value: nutrition.sodium, unit: 'mg' })
-    }
-    if (nutrition.magnesium !== undefined) {
-      categories.mineral.push({ label: '镁', value: nutrition.magnesium, unit: 'mg' })
-    }
+    // 水溶性维生素
+    addNutrient('vitamin', '维生素C', nutrition.vitaminC, 'mg')
+    addNutrient('vitamin', '维生素B1(硫胺素)', nutrition.vitaminB1 || nutrition.thiamin, 'mg')
+    addNutrient('vitamin', '维生素B2(核黄素)', nutrition.vitaminB2 || nutrition.riboflavin, 'mg')
+    addNutrient('vitamin', '维生素B3(烟酸)', nutrition.vitaminB3 || nutrition.niacin, 'mg')
+    addNutrient('vitamin', '维生素B5(泛酸)', nutrition.vitaminB5 || nutrition.pantothenicAcid, 'mg')
+    addNutrient('vitamin', '维生素B6', nutrition.vitaminB6, 'mg')
+    addNutrient('vitamin', '维生素B7(生物素)', nutrition.vitaminB7 || nutrition.biotin, 'μg')
+    addNutrient('vitamin', '维生素B9(叶酸)', nutrition.vitaminB9 || nutrition.folate || nutrition.folicAcid, 'μg')
+    addNutrient('vitamin', '维生素B12', nutrition.vitaminB12, 'μg')
+    addNutrient('vitamin', '胆碱', nutrition.choline, 'mg')
     
-    // 其他
-    if (nutrition.cholesterol !== undefined) {
-      categories.other.push({ label: '胆固醇', value: nutrition.cholesterol, unit: 'mg' })
-    }
-    if (nutrition.sugar !== undefined) {
-      categories.other.push({ label: '糖', value: nutrition.sugar, unit: 'g' })
-    }
+    // 矿物质（全面的矿物质列表）
+    // 常量元素
+    addNutrient('mineral', '钙', nutrition.calcium, 'mg')
+    addNutrient('mineral', '磷', nutrition.phosphorus, 'mg')
+    addNutrient('mineral', '钾', nutrition.potassium, 'mg')
+    addNutrient('mineral', '钠', nutrition.sodium, 'mg')
+    addNutrient('mineral', '镁', nutrition.magnesium, 'mg')
+    addNutrient('mineral', '氯', nutrition.chloride, 'mg')
+    addNutrient('mineral', '硫', nutrition.sulfur, 'mg')
     
+    // 微量元素
+    addNutrient('mineral', '铁', nutrition.iron, 'mg')
+    addNutrient('mineral', '锌', nutrition.zinc, 'mg')
+    addNutrient('mineral', '铜', nutrition.copper, 'mg')
+    addNutrient('mineral', '锰', nutrition.manganese, 'mg')
+    addNutrient('mineral', '硒', nutrition.selenium, 'μg')
+    addNutrient('mineral', '碘', nutrition.iodine, 'μg')
+    addNutrient('mineral', '氟', nutrition.fluoride, 'μg')
+    addNutrient('mineral', '铬', nutrition.chromium, 'μg')
+    addNutrient('mineral', '钼', nutrition.molybdenum, 'μg')
+    
+    // 其他成分
+    addNutrient('other', '胆固醇', nutrition.cholesterol, 'mg')
+    addNutrient('other', '总糖', nutrition.sugar || nutrition.totalSugar, 'g')
+    addNutrient('other', '果糖', nutrition.fructose, 'g')
+    addNutrient('other', '葡萄糖', nutrition.glucose, 'g')
+    addNutrient('other', '蔗糖', nutrition.sucrose, 'g')
+    addNutrient('other', '乳糖', nutrition.lactose, 'g')
+    addNutrient('other', '麦芽糖', nutrition.maltose, 'g')
+    addNutrient('other', '淀粉', nutrition.starch, 'g')
+    addNutrient('other', '饱和脂肪酸', nutrition.saturatedFat, 'g')
+    addNutrient('other', '单不饱和脂肪酸', nutrition.monounsaturatedFat, 'g')
+    addNutrient('other', '多不饱和脂肪酸', nutrition.polyunsaturatedFat, 'g')
+    addNutrient('other', '反式脂肪酸', nutrition.transFat, 'g')
+    addNutrient('other', 'ω-3脂肪酸', nutrition.omega3, 'g')
+    addNutrient('other', 'ω-6脂肪酸', nutrition.omega6, 'g')
+    addNutrient('other', '嘌呤', nutrition.purine, 'mg')
+    addNutrient('other', '咖啡因', nutrition.caffeine, 'mg')
+    addNutrient('other', '酒精', nutrition.alcohol, 'g')
+    
+    console.log('生成的营养分类:', categories)
     return categories
+  },
+  
+  // 将营养数组转换为对象
+  nutritionArrayToObject(nutritionArray) {
+    if (!nutritionArray || !Array.isArray(nutritionArray)) {
+      return {}
+    }
+    
+    const nutritionObj = {}
+    const keyMap = {
+      '蛋白质': 'protein',
+      '脂肪': 'fat',
+      '碳水': 'carbohydrate',
+      '碳水化合物': 'carbohydrate',
+      '纤维': 'fiber',
+      '膳食纤维': 'fiber',
+      '水分': 'water',
+      '热量': 'calories',
+      '维生素A': 'vitaminA',
+      '维生素C': 'vitaminC',
+      '维生素D': 'vitaminD',
+      '维生素E': 'vitaminE',
+      '维生素K': 'vitaminK',
+      '维生素B1': 'vitaminB1',
+      '维生素B2': 'vitaminB2',
+      '维生素B6': 'vitaminB6',
+      '维生素B12': 'vitaminB12',
+      '烟酸': 'niacin',
+      '烟酸(B3)': 'niacin',
+      '叶酸': 'folate',
+      '钙': 'calcium',
+      '铁': 'iron',
+      '锌': 'zinc',
+      '钾': 'potassium',
+      '钠': 'sodium',
+      '镁': 'magnesium',
+      '磷': 'phosphorus',
+      '硒': 'selenium',
+      '铜': 'copper',
+      '锰': 'manganese',
+      '胆固醇': 'cholesterol',
+      '糖': 'sugar',
+      '维生素': 'vitamin',
+      '矿物质': 'mineral'
+    }
+    
+    nutritionArray.forEach(item => {
+      if (item && item.label !== undefined && item.value !== undefined) {
+        const key = keyMap[item.label] || item.label.toLowerCase().replace(/\s+/g, '')
+        nutritionObj[key] = parseFloat(item.value) || 0
+      }
+    })
+    
+    return nutritionObj
   },
   
   // 构建完整的食物详情
   buildFoodDetail(foodData) {
-    // 如果已经有完整的详情数据，直接返回
-    if (foodData.name && foodData.description && foodData.nutrition) {
-      return foodData
-    }
-    
-    // 否则构建完整的详情
+    // 如果已经有完整的详情数据，补充缺失字段后返回
     const foodName = foodData.name || '未知食物'
     const imageUrl = foodData.imageUrl || foodData.image || 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=200&h=200&fit=crop&auto=format'
     const calories = foodData.calories || foodData.calorie || 0
@@ -254,10 +337,13 @@ Page({
     const nutrition = foodData.nutrition || foodData.searchData?.nutrition || {}
     
     // 构建标签
-    const tags = this.generateFoodTags(foodName, calories, nutrition)
+    const tags = foodData.tags || this.generateFoodTags(foodName, calories, nutrition)
     
     // 构建健康建议
-    const benefits = this.generateHealthBenefits(foodName, nutrition)
+    const benefits = foodData.benefits || this.generateHealthBenefits(foodName, nutrition)
+    
+    // 生成建议信息
+    const suggestionInfo = this.generateSuggestionInfo(foodName, calories, nutrition)
     
     return {
       name: foodName,
@@ -267,9 +353,80 @@ Page({
       tags: tags,
       nutrition: nutrition,
       benefits: benefits,
-      servingSize: '100克',
-      storageTips: '根据食物类型适当保存',
+      servingSize: foodData.servingSize || suggestionInfo.servingSize,
+      storageTips: foodData.storageTips || suggestionInfo.storageTips,
+      cookingMethod: foodData.cookingMethod || suggestionInfo.cookingMethod,
+      bestTime: foodData.bestTime || suggestionInfo.bestTime,
       source: foodData.source || 'search'
+    }
+  },
+  
+  // 生成建议信息
+  generateSuggestionInfo(foodName, calories, nutrition) {
+    const foodNameLower = foodName.toLowerCase()
+    let servingSize = '100克/次'
+    let storageTips = '常温或冷藏保存'
+    let cookingMethod = '可直接食用或烹饪后食用'
+    let bestTime = '不限'
+    
+    // 根据食物类型生成建议
+    if (foodNameLower.includes('水果') || foodNameLower.includes('苹果') || 
+        foodNameLower.includes('香蕉') || foodNameLower.includes('橙') ||
+        foodNameLower.includes('梨') || foodNameLower.includes('葡萄')) {
+      servingSize = '150-200克/次'
+      storageTips = '常温保存，成熟后可冷藏延长保鲜期'
+      cookingMethod = '清洗后直接食用，也可榨汁或制作沙拉'
+      bestTime = '餐后1小时或上午10点左右'
+    } else if (foodNameLower.includes('蔬菜') || foodNameLower.includes('西兰花') || 
+               foodNameLower.includes('菠菜') || foodNameLower.includes('白菜') ||
+               foodNameLower.includes('胡萝卜')) {
+      servingSize = '100-150克/次'
+      storageTips = '冷藏保存，建议3-5天内食用'
+      cookingMethod = '清炒、水煮或凉拌，避免过度烹饪'
+      bestTime = '午餐或晚餐'
+    } else if (foodNameLower.includes('肉') || foodNameLower.includes('鸡') || 
+               foodNameLower.includes('牛') || foodNameLower.includes('猪')) {
+      servingSize = '50-100克/次'
+      storageTips = '冷冻保存可保鲜3个月，解冻后尽快食用'
+      cookingMethod = '煎、炒、炖、蒸均可，建议充分加热'
+      bestTime = '午餐为宜'
+    } else if (foodNameLower.includes('鱼') || foodNameLower.includes('虾') || 
+               foodNameLower.includes('海鲜')) {
+      servingSize = '80-120克/次'
+      storageTips = '冷冻保存，解冻后当天食用'
+      cookingMethod = '清蒸、红烧或煎炸，保持鲜嫩口感'
+      bestTime = '午餐或晚餐'
+    } else if (foodNameLower.includes('米饭') || foodNameLower.includes('面') || 
+               foodNameLower.includes('馒头') || foodNameLower.includes('面包')) {
+      servingSize = '150-200克/次'
+      storageTips = '密封保存，避免受潮'
+      cookingMethod = '蒸煮或烘烤后食用'
+      bestTime = '正餐时间'
+    } else if (foodNameLower.includes('蛋') || foodNameLower.includes('鸡蛋')) {
+      servingSize = '1-2个/次'
+      storageTips = '冷藏保存，大头朝上放置'
+      cookingMethod = '水煮、煎、炒或蒸均可'
+      bestTime = '早餐为宜'
+    } else if (foodNameLower.includes('奶') || foodNameLower.includes('牛奶') || 
+               foodNameLower.includes('酸奶')) {
+      servingSize = '200-250毫升/次'
+      storageTips = '冷藏保存，开封后尽快饮用'
+      cookingMethod = '直接饮用或加热后饮用'
+      bestTime = '早餐或睡前'
+    }
+    
+    // 根据热量调整建议份量
+    if (calories > 300) {
+      servingSize = '50-80克/次（高热量食物，建议控制摄入）'
+    } else if (calories < 50) {
+      servingSize = '150-200克/次（低热量食物，可适量多吃）'
+    }
+    
+    return {
+      servingSize,
+      storageTips,
+      cookingMethod,
+      bestTime
     }
   },
   
@@ -523,32 +680,6 @@ Page({
     })
   },
 
-  // 保存记录
-  saveRecord() {
-    if (!this.data.foodDetail) return
-
-    wx.showLoading({ title: '保存中...' })
-
-    setTimeout(() => {
-      wx.hideLoading()
-      wx.showToast({
-        title: '保存成功',
-        icon: 'success'
-      })
-
-      // 返回上一页
-      setTimeout(() => {
-        if (this.data.fromPage === 'history') {
-          wx.navigateBack()
-        } else {
-          wx.navigateTo({
-            url: '/pages/history/history'
-          })
-        }
-      }, 1500)
-    }, 1000)
-  },
-
   // 切换收藏状态
   toggleFavorite() {
     const newStatus = !this.data.isFavorite
@@ -560,20 +691,51 @@ Page({
     })
   },
 
-  // 分享食物
-  shareFood() {
-    wx.showShareMenu({
-      withShareTicket: true
+  // 分享到朋友圈
+  shareToMoments() {
+    const foodDetail = this.data.foodDetail
+    if (!foodDetail) {
+      wx.showToast({
+        title: '暂无食物信息',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 微信小程序分享到朋友圈需要通过 onShareTimeline 实现
+    // 这里提示用户使用右上角菜单分享
+    wx.showModal({
+      title: '分享到朋友圈',
+      content: '请点击右上角「...」按钮，选择「分享到朋友圈」即可分享',
+      showCancel: false,
+      confirmText: '知道了',
+      confirmColor: '#07c160'
     })
   },
 
-  // 分享回调
+  // 分享给好友回调
   onShareAppMessage() {
-    const foodName = this.data.foodDetail?.name || '食物'
+    const foodDetail = this.data.foodDetail
+    const foodName = foodDetail?.name || '食物'
+    const calories = foodDetail?.calories || 0
+    
     return {
-      title: `${foodName} - 营养信息`,
-      path: `/pages/detail/detail?id=${this.data.foodDetail?.id || 1}`,
-      imageUrl: this.data.foodDetail?.image || 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&h=200&fit=crop&auto=format'
+      title: `🍽️ ${foodName} - ${calories}千卡/100g`,
+      path: `/pages/detail/detail?id=${foodDetail?.id || 1}`,
+      imageUrl: foodDetail?.image || 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&h=200&fit=crop&auto=format'
+    }
+  },
+
+  // 分享到朋友圈回调
+  onShareTimeline() {
+    const foodDetail = this.data.foodDetail
+    const foodName = foodDetail?.name || '食物'
+    const calories = foodDetail?.calories || 0
+    
+    return {
+      title: `${foodName} - ${calories}千卡/100g | 营养成分分析`,
+      query: `id=${foodDetail?.id || 1}`,
+      imageUrl: foodDetail?.image || 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&h=200&fit=crop&auto=format'
     }
   },
 

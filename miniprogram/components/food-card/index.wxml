@@ -1,83 +1,30 @@
 <!--components/food-card/index.wxml-->
-<view 
-  class="food-card {{cardStyle}}"
-  bindtap="onCardTap"
->
+<view class="food-card" bindtap="onTap">
   <!-- 食物图片 -->
-  <view class="card-image">
+  <view class="food-image-container">
     <image 
-      src="{{food.image || 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=200&h=200&fit=crop&auto=format'}}" 
+      wx:if="{{food.image}}"
+      class="food-image" 
+      src="{{food.image}}" 
       mode="aspectFill"
-    ></image>
-    <!-- 收藏按钮 -->
-    <view 
-      class="favorite-btn" 
-      wx:if="{{showActions}}"
-      bindtap="onFavoriteTap"
-      catchtap
-    >
-      <van-icon 
-        name="{{isFavorite ? 'star' : 'star-o'}}" 
-        size="20" 
-        color="{{isFavorite ? '#ffd700' : 'white'}}"
-      />
+      binderror="onImageError"
+    />
+    <view wx:else class="food-image-placeholder">
+      <van-icon name="photo-o" size="40" color="#c8c9cc" />
+    </view>
+    <!-- 置信度标签 -->
+    <view wx:if="{{confidenceText}}" class="confidence-badge">
+      {{confidenceText}}
     </view>
   </view>
-
+  
   <!-- 食物信息 -->
-  <view class="card-content">
-    <!-- 食物名称和热量 -->
-    <view class="food-info">
-      <text class="food-name">{{food.name || '未知食物'}}</text>
-      <text class="food-calories">{{food.calories || 0}} 千卡</text>
-    </view>
-
-    <!-- 食物标签 -->
-    <view class="food-tags" wx:if="{{showTags && food.tags}}">
-      <van-tag 
-        wx:for="{{food.tags}}" 
-        wx:key="index"
-        type="primary" 
-        size="mini"
-      >
-        {{item}}
-      </van-tag>
-    </view>
-
-    <!-- 额外信息 -->
-    <view class="food-extra" wx:if="{{food.time || food.type}}">
-      <text class="extra-text" wx:if="{{food.time}}">
-        <van-icon name="clock-o" size="12" />
-        {{food.time}}
-      </text>
-      <text class="extra-text" wx:if="{{food.type}}">
-        <van-icon name="label-o" size="12" />
-        {{food.type === 'ai' ? 'AI识别' : '手动添加'}}
-      </text>
-    </view>
-
-    <!-- 操作按钮 -->
-    <view class="card-actions" wx:if="{{showActions}}">
-      <van-button 
-        type="primary" 
-        size="mini" 
-        plain
-        bindtap="onShareTap"
-        catchtap
-      >
-        <van-icon name="share" size="12" />
-        分享
-      </van-button>
-      <van-button 
-        type="danger" 
-        size="mini" 
-        plain
-        bindtap="onDeleteTap"
-        catchtap
-      >
-        <van-icon name="delete" size="12" />
-        删除
-      </van-button>
+  <view class="food-info">
+    <view class="food-name">{{food.foodName || '未知食物'}}</view>
+    <view class="food-calories">
+      <van-icon name="fire-o" size="14" color="#ff6b6b" />
+      <text class="calories-value">{{food.calories || 0}}</text>
+      <text class="calories-unit">千卡/100g</text>
     </view>
   </view>
 </view>

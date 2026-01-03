@@ -1,0 +1,69 @@
+<!-- pages/test/test.wxml - 图片功能测试页面 -->
+<view class="container">
+  <!-- 标题 -->
+  <view class="header">
+    <view class="title">图片功能测试</view>
+    <view class="subtitle">测试重新编写的图片处理功能</view>
+  </view>
+
+  <!-- 控制按钮 -->
+  <view class="control-section">
+    <view class="button-group">
+      <button class="btn btn-primary" bindtap="testTakePhoto" disabled="{{loading}}">
+        {{loading ? '测试中...' : '测试拍照功能'}}
+      </button>
+      <button class="btn btn-secondary" bindtap="testChooseFromAlbum" disabled="{{loading}}">
+        {{loading ? '测试中...' : '测试相册选择'}}
+      </button>
+      <button class="btn btn-info" bindtap="testCompressImage" disabled="{{loading}}">
+        {{loading ? '测试中...' : '测试图片压缩'}}
+      </button>
+      <button class="btn btn-warning" bindtap="testPermissionCheck" disabled="{{loading}}">
+        {{loading ? '测试中...' : '测试权限检查'}}
+      </button>
+      <button class="btn btn-success" bindtap="testSaveImage" disabled="{{loading}}">
+        {{loading ? '测试中...' : '测试图片保存'}}
+      </button>
+    </view>
+    
+    <view class="action-group">
+      <button class="btn btn-clear" bindtap="clearTestResults" disabled="{{loading}}">
+        清空测试结果
+      </button>
+      <button class="btn btn-back" bindtap="goBack">
+        返回首页
+      </button>
+    </view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="results-section">
+    <view class="section-title">测试结果</view>
+    
+    <view class="results-list">
+      <block wx:for="{{testResults}}" wx:key="time">
+        <view class="result-item result-{{item.type}}">
+          <view class="result-time">{{item.time}}</view>
+          <view class="result-message">{{item.message}}</view>
+        </view>
+      </block>
+      
+      <view wx:if="{{testResults.length === 0}}" class="empty-results">
+        <text>暂无测试结果，请点击上方按钮开始测试</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 说明 -->
+  <view class="info-section">
+    <view class="section-title">测试说明</view>
+    <view class="info-content">
+      <text>1. 拍照功能：测试相机拍照和图片处理</text>
+      <text>2. 相册选择：测试从相册选择图片</text>
+      <text>3. 图片压缩：测试智能压缩到500KB以内</text>
+      <text>4. 权限检查：测试相机和相册权限状态</text>
+      <text>5. 图片保存：测试保存图片到相册</text>
+      <text>注意：测试结果会显示在下方，详细日志请查看控制台</text>
+    </view>
+  </view>
+</view>

@@ -1,69 +1,82 @@
 // components/food-card/index.js
 Component({
+  /**
+   * 组件的属性列表
+   */
   properties: {
-    // 食物数据
     food: {
       type: Object,
-      value: {}
-    },
-    // 是否显示操作按钮
-    showActions: {
-      type: Boolean,
-      value: false
-    },
-    // 是否显示标签
-    showTags: {
-      type: Boolean,
-      value: true
-    },
-    // 卡片样式
-    cardStyle: {
-      type: String,
-      value: ''
+      value: {
+        id: '',
+        foodName: '',
+        calories: 0,
+        image: '',
+        time: '',
+        type: 'manual',
+        tags: [],
+        confidence: 0,
+        nutrition: {}
+      },
+      observer: function(newVal) {
+        // 当 food 属性变化时，计算置信度文本
+        this.updateConfidenceText(newVal)
+      }
     }
   },
 
+  /**
+   * 组件的初始数据
+   */
   data: {
-    // 组件内部数据
-    isFavorite: false
+    defaultImage: '/images/default-food.png',
+    confidenceText: ''
   },
 
-  methods: {
-    // 点击卡片
-    onCardTap() {
-      this.triggerEvent('tap', { food: this.data.food })
-    },
-
-    // 点击收藏
-    onFavoriteTap() {
-      const newStatus = !this.data.isFavorite
-      this.setData({ isFavorite: newStatus })
-      this.triggerEvent('favorite', { 
-        food: this.data.food, 
-        isFavorite: newStatus 
-      })
-    },
-
-    // 点击分享
-    onShareTap() {
-      this.triggerEvent('share', { food: this.data.food })
-    },
-
-    // 点击删除
-    onDeleteTap() {
-      this.triggerEvent('delete', { food: this.data.food })
-    }
-  },
-
-  // 组件生命周期
+  /**
+   * 组件生命周期
+   */
   lifetimes: {
     attached() {
-      // 组件挂载时执行
-      if (this.data.food) {
-        // 初始化收藏状态
-        const isFavorite = wx.getStorageSync(`food_favorite_${this.data.food.id}`) || false
-        this.setData({ isFavorite })
+      // 组件挂载时计算置信度
+      this.updateConfidenceText(this.data.food)
+    }
+  },
+
+  /**
+   * 组件的方法列表
+   */
+  methods: {
+    // 更新置信度文本
+    updateConfidenceText(food) {
+      if (!food || !food.confidence || food.confidence <= 0) {
+        this.setData({ confidenceText: '' })
+        return
       }
+      
+      const confidence = food.confidence
+      let text = ''
+      
+      if (confidence > 1) {
+        // 已经是百分比形式
+        text = Math.round(confidence) + '%'
+      } else {
+        // 小数形式，转换为百分比
+        text = Math.round(confidence * 100) + '%'
+      }
+      
+      this.setData({ confidenceText: text })
+    },
+    
+    // 点击卡片
+    onTap() {
+      this.triggerEvent('tap', { food: this.data.food })
+    },
+    
+    // 图片加载错误时使用默认图片
+    onImageError() {
+      this.setData({
+        'food.image': this.data.defaultImage
+      })
     }
   }
 })

@@ -30,6 +30,8 @@ class ImageUtils {
       wx.chooseMedia({
         ...mergedOptions,
         success: (res) => {
+          console.log('选择图片成功:', res)
+          
           const files = res.tempFiles.map(file => ({
             path: file.tempFilePath,
             size: file.size,
@@ -48,9 +50,15 @@ class ImageUtils {
             return
           }
 
-          resolve(files)
+          // 返回兼容的格式
+          resolve({
+            files: files,
+            tempFiles: res.tempFiles,
+            type: res.type
+          })
         },
         fail: (error) => {
+          console.error('选择图片失败:', error)
           reject(new Error(`选择图片失败: ${error.errMsg}`))
         }
       })
@@ -72,11 +80,14 @@ class ImageUtils {
       }
     }
 
-    // 检查文件类型
-    if (!this.allowedTypes.includes(file.type)) {
+    // 检查文件类型 - 更宽松的验证
+    // wx.chooseMedia 返回的 fileType 可能是 'image' 或具体的类型如 'jpg', 'png'
+    // 我们允许所有图片类型
+    const imageTypes = ['image', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+    if (!imageTypes.includes(file.type?.toLowerCase())) {
       return {
         valid: false,
-        message: `不支持的文件类型: ${file.type}`
+        message: `不支持的文件类型: ${file.type}，请选择图片文件`
       }
     }
 
@@ -437,37 +448,21 @@ class ImageUtils {
 const imageUtils = new ImageUtils()
 
 module.exports = {
-  // 图片选择
-  chooseImage: (options) => imageUtils.chooseImage(options),
-  
-  // 图片处理
+  // 基础图片处理（供 imageProcessor.js 和服务文件使用）
   compressImage: (src, options) => imageUtils.compressImage(src, options),
-  compressImageToSize: (imagePath, maxSize) => imageUtils.compressImageToSize(imagePath, maxSize),
   getImageInfo: (src) => imageUtils.getImageInfo(src),
   getImageBase64: (imagePath) => imageUtils.getImageBase64(imagePath),
-  
-  // 图片上传
-  uploadToCloud: (imagePath, cloudPath) => imageUtils.uploadToCloud(imagePath, cloudPath),
+  getFileInfo: (filePath) => imageUtils.getFileInfo(filePath),
+  validateImage: (file) => imageUtils.validateImage(file),
   
   // 图片展示
   previewImage: (urls, current) => imageUtils.previewImage(urls, current),
-  saveImageToPhotosAlbum: (filePath) => imageUtils.saveImageToPhotosAlbum(filePath),
   
-  // URL处理
-  generateImageUrl: (path, options) => imageUtils.generateImageUrl(path, options),
+  // 高级功能（已迁移到 imageProcessor.js）
+  // chooseImage: (options) => imageUtils.chooseImage(options), // 使用 imageProcessor.selectImage() 替代
+  // compressImageToSize: (imagePath, maxSize) => imageUtils.compressImageToSize(imagePath, maxSize), // 使用 imageProcessor.compressToSize() 替代
+  // saveImageToPhotosAlbum: (filePath) => imageUtils.saveImageToPhotosAlbum(filePath), // 使用 imageProcessor.saveToPhotosAlbum() 替代
   
-  // 懒加载
-  lazyLoad: (src, placeholder) => imageUtils.lazyLoad(src, placeholder),
-  
-  // 批量处理
-  batchProcessImages: (images, processor) => imageUtils.batchProcessImages(images, processor),
-  
-  // 验证
-  validateImage: (file) => imageUtils.validateImage(file),
-  
-  // 文件操作
-  getFileInfo: (filePath) => imageUtils.getFileInfo(filePath),
-  
-  // 实例
+  // 工具实例
   utils: imageUtils
 }

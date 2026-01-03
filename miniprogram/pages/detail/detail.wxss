@@ -183,28 +183,49 @@
   flex: 1;
 }
 
-/* 实用信息 */
-.practical-info {
+/* 建议信息 */
+.suggestion-info {
   display: flex;
   flex-direction: column;
-  gap: 15rpx;
+  gap: 20rpx;
 }
 
-.info-item {
+.suggestion-info .info-item {
   display: flex;
+  align-items: flex-start;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
 }
 
-.info-label {
+.suggestion-info .info-icon {
+  width: 48rpx;
+  height: 48rpx;
+  background: white;
+  border-radius: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-info .info-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.suggestion-info .info-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 6rpx;
+}
+
+.suggestion-info .info-value {
   font-size: 26rpx;
   color: #333;
-  font-weight: 500;
-  min-width: 140rpx;
-}
-
-.info-value {
-  font-size: 26rpx;
-  color: #666;
-  flex: 1;
+  line-height: 1.5;
 }
 
 /* AI建议 */
@@ -236,6 +257,55 @@
   flex-direction: column;
   gap: 20rpx;
   padding: 30rpx 0;
+}
+
+/* 分享按钮组 */
+.share-buttons {
+  display: flex;
+  gap: 20rpx;
+}
+
+.share-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  border: none;
+  line-height: 1;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-btn text {
+  line-height: 1;
+}
+
+.share-btn-primary {
+  background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
+  color: white;
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+}
+
+.share-btn-primary:active {
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+
+.share-btn-secondary {
+  background: white;
+  color: #07c160;
+  border: 2rpx solid #07c160;
+}
+
+.share-btn-secondary:active {
+  background: #f0fff5;
 }
 
 /* 加载状态 */
@@ -304,10 +374,21 @@
   
   .food-description,
   .benefit-item text,
-  .info-label,
-  .info-value,
   .suggestion-item text {
     font-size: 24rpx;
+  }
+  
+  .suggestion-info .info-label {
+    font-size: 22rpx;
+  }
+  
+  .suggestion-info .info-value {
+    font-size: 24rpx;
+  }
+  
+  .share-btn {
+    height: 80rpx;
+    font-size: 26rpx;
   }
 }
 

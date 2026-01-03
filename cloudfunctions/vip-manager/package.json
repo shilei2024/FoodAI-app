@@ -1,0 +1,14 @@
+{
+  "name": "vip-manager",
+  "version": "1.0.0",
+  "description": "VIP会员管理云函数",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  },
+  "author": "FoodAI Team",
+  "license": "MIT"
+}

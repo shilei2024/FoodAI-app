@@ -53,24 +53,6 @@
     </view>
   </view>
 
-  <!-- 图例 -->
-  <view class="chart-legend" wx:if="{{showLegend && chartConfig.categories.length > 0}}">
-    <view 
-      class="legend-item" 
-      wx:for="{{chartConfig.categories}}" 
-      wx:key="index"
-      bindtap="onLegendClick"
-      data-index="{{index}}"
-    >
-      <view class="legend-color" style="background-color: {{chartConfig.colors ? chartConfig.colors[index] : chartConfig.series[0].color}};"></view>
-      <text class="legend-text">{{item}}</text>
-      <text class="legend-value">
-        {{chartConfig.series[0].data[index].toFixed(1)}}
-        <text class="legend-unit">{{chartConfig.units ? chartConfig.units[index] : '单位'}}</text>
-      </text>
-    </view>
-  </view>
-
   <!-- 图表说明 -->
   <view class="chart-description" wx:if="{{showTitle}}">
     <van-icon name="info-o" size="14" color="#1989fa" />

@@ -5,6 +5,6 @@
     "van-tag": "vant-weapp/tag/index",
     "van-cell": "vant-weapp/cell/index",
     "van-cell-group": "vant-weapp/cell-group/index",
-    "van-loading": "vant-weapp/loading/index",
+    "van-loading": "vant-weapp/loading/index"
   }
 }
