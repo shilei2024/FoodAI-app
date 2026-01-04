@@ -59,81 +59,75 @@ git clone <your-repo-url>
 cd FoodAI
 ```
 
-2. **安装依赖**
+2. **运行设置脚本**
+```bash
+# Windows 用户
+setup.bat
+
+# Linux/Mac 用户
+chmod +x setup.sh
+./setup.sh
+```
+
+3. **配置本地文件**
+   - 按照脚本提示创建 `config.local.js`
+   - 配置您的API密钥和小程序AppID
+
+4. **安装依赖**
 ```bash
 npm install
 ```
 
-3. **配置API密钥**
-
-在 `miniprogram/constants/config.js` 中配置：
-
-```javascript
-deepseekAI: {
-  apiKey: 'sk-your-api-key-here', // 替换为您的Deepseek API Key
-}
-```
-
-4. **配置小程序AppID**
-
-```javascript
-payment: {
-  wechatPay: {
-    appId: 'your-appid', // 替换为您的小程序AppID
-  }
-}
-```
-
 5. **打开项目**
-
-在微信开发者工具中打开项目目录。
+   在微信开发者工具中打开项目目录。
 
 6. **开始使用**
-
-- 首页搜索"苹果"测试功能
-- 尝试拍照识别
-- 查看历史记录
+   - 首页搜索"苹果"测试功能
+   - 尝试拍照识别
+   - 查看历史记录
 
 ---
 
 ## 📋 配置指南
 
-### 必需配置（5分钟）
+### 快速配置（推荐）
+使用项目提供的设置脚本，5分钟完成配置：
 
-1. **获取Deepseek API密钥**
-   - 访问 [Deepseek开放平台](https://platform.deepseek.com/)
-   - 注册并获取API密钥
-   - 在 `config.js` 中配置
+```bash
+# Windows
+setup.bat
 
-2. **配置小程序AppID**
-   - 在微信公众平台获取AppID
-   - 在 `config.js` 中配置
+# Linux/Mac
+./setup.sh
+```
 
-### 可选配置
+### 手动配置
+1. **复制配置文件**
+```bash
+cd miniprogram/constants
+cp config.local.example.js config.local.js
+```
 
-1. **支付功能**（需企业认证）
-   - 开通微信支付商户号
-   - 配置支付参数
-   - 部署支付云函数
+2. **配置AI服务**
+   - Deepseek AI：获取API密钥并配置
+   - 或百度AI：获取API Key和Secret Key
 
-2. **云数据库**（数据同步）
-   - 开通微信云开发
-   - 配置环境ID
-   - 初始化数据库
+3. **配置小程序AppID**
+   在 `config.local.js` 中配置您的小程序AppID
 
-详细配置请参考 [配置指南.md](./配置指南.md)
+详细配置请参考 [配置指南](./CONFIGURATION_GUIDE.md)
 
 ---
 
 ## 📚 文档
 
 ### 核心文档
-- 📖 [配置指南](./CONFIGURATION.md) - 简明的配置步骤
+- 📖 [配置指南](./CONFIGURATION_GUIDE.md) - 完整的配置步骤和说明
 - 📖 [功能完成度报告](./未完成功能.md) - 功能状态和计划
 
 ### 快速参考
 - 📖 项目结构：见下方项目结构图
-- 📖 API配置：在 `miniprogram/constants/config.js` 中配置
+- 📖 配置文件：三层配置结构（基础+本地+环境）
 - 📖 功能测试：配置API密钥后即可测试
 
 ---
@@ -143,6 +137,11 @@ payment: {
 ```
 FoodAI/
 ├── miniprogram/              # 小程序主目录
+│   ├── constants/           # 配置文件
+│   │   ├── config.base.js   # 基础配置（可提交Git）
+│   │   ├── config.local.example.js  # 本地配置示例
+│   │   ├── config.js        # 主配置文件（自动合并）
+│   │   └── config.local.js  # 本地配置（不提交Git）
 │   ├── pages/               # 页面
 │   │   ├── index/          # 首页（拍照识别、搜索）
 │   │   ├── history/        # 历史记录
@@ -163,9 +162,11 @@ FoodAI/
 │   │   ├── api.js          # API请求
 │   │   ├── auth.js         # 认证工具
 │   │   └── image.js        # 图片处理
-│   └── constants/          # 配置文件
-├── CONFIGURATION.md        # 简化配置指南
-└── 未完成功能.md           # 功能完成度报告
+├── cloudfunctions/         # 云函数目录
+├── CONFIGURATION_GUIDE.md  # 完整配置指南
+├── setup.sh               # 设置脚本（Linux/Mac）
+├── setup.bat              # 设置脚本（Windows）
+└── .gitignore             # Git忽略配置
 ```
 
 ---
@@ -228,27 +229,37 @@ FoodAI/
 
 ## 🔐 安全说明
 
+### 配置安全
+✅ **三层配置结构**：
+1. `config.base.js` - 基础配置（可提交Git）
+2. `config.local.js` - 本地配置（不提交Git）
+3. `config.js` - 自动合并配置
+
 ### API密钥保护
 ⚠️ **重要提示**：
-- API密钥配置在前端代码中会被暴露
-- **生产环境强烈建议使用云函数保护密钥**
+- 本地配置文件已添加到 `.gitignore`
+- 生产环境建议使用云函数保护密钥
 - 定期更换API密钥
 - 监控API使用情况
 
 ### 最佳实践
-1. 使用云函数代理API调用
-2. 配置请求频率限制
-3. 实施用户权限控制
+1. 使用设置脚本快速配置
+2. 开发环境使用直接调用模式
+3. 生产环境使用云函数模式
 4. 定期备份数据
-
-详细安全配置请参考 [配置指南.md](./配置指南.md)
 
 ---
 
 ## 🐛 常见问题
 
-### Q: 为什么搜索食物显示"API密钥未配置"？
-**A:** 需要在 `config.js` 中配置Deepseek或百度AI的API密钥。
+### Q: 如何快速开始？
+**A:** 运行设置脚本：`setup.bat`（Windows）或 `./setup.sh`（Linux/Mac）
+
+### Q: API密钥应该放在哪里？
+**A:** 放在 `miniprogram/constants/config.local.js` 中，此文件不提交到Git
+
+### Q: 如何切换开发/生产环境？
+**A:** 在 `config.js` 中修改 `getEnvConfig()` 函数的返回值
 
 ### Q: 支付功能无法使用？
 **A:** 支付功能需要：
@@ -257,10 +268,7 @@ FoodAI/
 3. 配置支付参数
 4. 部署支付云函数
 
-### Q: 如何切换开发/生产环境？
-**A:** 在 `config.js` 中修改 `getEnvConfig()` 函数的返回值。
-
-更多问题请查看 [配置指南.md](./配置指南.md) 的常见问题章节。
+更多问题请查看 [配置指南](./CONFIGURATION_GUIDE.md) 的常见问题章节。
 
 ---
 
@@ -270,7 +278,7 @@ FoodAI/
 - ✅ 核心AI识别功能
 - ✅ 基础数据管理
 - ✅ 用户界面完善
-- ⏳ API密钥配置
+- ✅ 配置系统优化
 
 ### v1.1.0（计划中）
 - ⏳ 完善用户认证系统

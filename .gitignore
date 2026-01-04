@@ -1,0 +1,63 @@
+# 依赖目录
+node_modules/
+miniprogram/miniprogram_npm/
+miniprogram/node_modules/
+
+# 本地配置文件
+miniprogram/constants/config.local.js
+miniprogram/constants/*.backup.*
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 运行时数据
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率
+coverage/
+.nyc_output
+
+# 构建输出
+dist/
+build/
+
+# 微信开发者工具生成的文件
+project.private.config.json
+
+# 临时文件
+tmp/
+temp/
+
+# 备份文件
+*.bak
+*.backup
+
+# 证书文件
+*.pem
+*.key
+*.crt
+
+# 敏感数据文件
+*secret*
+*private*
+*password*
+*credential*
