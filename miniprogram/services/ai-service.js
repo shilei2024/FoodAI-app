@@ -46,23 +46,42 @@ class AIService {
    */
   shouldUseSecureMode() {
     // 根据配置决定使用哪种模式
-    // 生产环境建议使用安全模式
+    // 支持三种模式：auto（自动判断）、direct（直接调用）、secure（云函数安全模式）
     
-    // 临时解决方案：强制使用直接调用模式，避免云函数问题
-    // 如果您想使用云函数，请注释掉下面这行
-    return false;
+    const mode = config.features.aiRecognition.mode || 'auto';
     
-    /*
+    // 如果明确指定模式，直接返回
+    if (mode === 'direct') {
+      console.log('使用直接调用模式（手动指定）');
+      return false;
+    }
+    if (mode === 'secure') {
+      console.log('使用云函数安全模式（手动指定）');
+      return true;
+    }
+    
+    // auto模式：根据环境自动判断
     const env = config.debug.enabled ? 'development' : 'production';
     
     // 如果有云环境配置，优先使用安全模式
     if (config.cloud && config.cloud.env) {
+      console.log('检测到云环境配置，启用安全模式（云函数）');
       return true;
     }
     
-    // 开发环境可以使用直接调用模式
+    // 根据环境配置决定
+    const envConfig = config.features.aiRecognition[env];
+    if (envConfig) {
+      const useSecure = env === 'production' ? 
+        (envConfig.useSecureMode !== false) : 
+        (envConfig.useSecureMode === true);
+      console.log(`环境: ${env}, 使用${useSecure ? '安全模式' : '直接调用模式'}`);
+      return useSecure;
+    }
+    
+    // 默认：开发环境用直接调用，生产环境用安全模式
+    console.log(`环境: ${env}, 使用${env === 'production' ? '安全模式' : '直接调用模式'}`);
     return env === 'production';
-    */
   }
 
   /**
@@ -780,14 +799,106 @@ class AIService {
       }
     };
 
-    // 尝试匹配食物名称（包含关键词）
+    // 精确匹配优先
     const foodNameLower = foodName.toLowerCase();
+    
+    // 1. 首先尝试精确匹配
     for (const [key, value] of Object.entries(nutritionMap)) {
-      if (foodNameLower.includes(key.toLowerCase())) {
+      if (foodNameLower === key.toLowerCase()) {
         return value;
       }
     }
+    
+    // 2. 如果精确匹配失败，尝试包含匹配，但避免误匹配
+    // 例如："苹果派"不应该匹配到"苹果"
+    const commonFoodKeywords = {
+      '苹果': ['苹果', '红富士', '青苹果', '苹果果'],
+      '香蕉': ['香蕉', '芭蕉'],
+      '米饭': ['米饭', '白米饭', '大米饭'],
+      '鸡蛋': ['鸡蛋', '蛋', '鸡蛋羹'],
+      '牛肉': ['牛肉', '牛排', '牛肉片'],
+      '鸡肉': ['鸡肉', '鸡胸肉', '鸡腿'],
+      '鱼肉': ['鱼肉', '鱼', '鱼肉片'],
+      '面包': ['面包', '吐司', '面包片'],
+      '牛奶': ['牛奶', '鲜奶', '纯牛奶'],
+      '蔬菜': ['蔬菜', '青菜', '叶菜']
+    };
+    
+    for (const [foodKey, keywords] of Object.entries(commonFoodKeywords)) {
+      for (const keyword of keywords) {
+        // 使用正则表达式确保是完整的单词匹配，避免部分匹配
+        const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`);
+        if (regex.test(foodNameLower) && nutritionMap[foodKey]) {
+          return nutritionMap[foodKey];
+        }
+      }
+    }
+    
+    // 3. 如果以上都失败，根据食物类别返回通用营养信息
+    return this.getNutritionByCategory(foodNameLower);
+  }
 
+  /**
+   * 根据食物类别获取通用营养信息
+   * @param {string} foodNameLower 小写的食物名称
+   * @returns {Object} 通用营养信息
+   */
+  getNutritionByCategory(foodNameLower) {
+    // 食物类别映射
+    const categoryMap = {
+      '水果': {
+        protein: 0.5, fat: 0.3, carbohydrate: 15, fiber: 2.0, calories: 60,
+        water: 85, vitaminC: 30, potassium: 200, calcium: 10, iron: 0.3,
+        vitaminA: 50, vitaminE: 0.5, sodium: 2, magnesium: 10, phosphorus: 20,
+        sugar: 12, cholesterol: 0
+      },
+      '蔬菜': {
+        protein: 2.0, fat: 0.2, carbohydrate: 5.0, fiber: 2.0, calories: 25,
+        water: 90, vitaminC: 20, vitaminA: 500, vitaminK: 50, folate: 40,
+        calcium: 30, iron: 1.0, potassium: 200, sodium: 20, magnesium: 15,
+        phosphorus: 25, zinc: 0.3, cholesterol: 0
+      },
+      '肉类': {
+        protein: 20, fat: 10, carbohydrate: 0, fiber: 0, calories: 200,
+        water: 60, vitaminB12: 2.0, vitaminB6: 0.3, niacin: 5.0, iron: 2.0,
+        zinc: 4.0, potassium: 300, sodium: 70, magnesium: 20, phosphorus: 200,
+        selenium: 20, cholesterol: 80
+      },
+      '主食': {
+        protein: 3.0, fat: 1.0, carbohydrate: 25, fiber: 1.0, calories: 120,
+        water: 70, vitaminB1: 0.1, vitaminB2: 0.05, vitaminB3: 1.5, iron: 1.0,
+        calcium: 20, potassium: 100, sodium: 5, magnesium: 15, phosphorus: 50,
+        zinc: 0.8, cholesterol: 0
+      },
+      '蛋奶': {
+        protein: 10, fat: 5, carbohydrate: 3, fiber: 0, calories: 100,
+        water: 80, vitaminA: 100, vitaminD: 1.0, vitaminB2: 0.2, vitaminB12: 0.5,
+        calcium: 100, potassium: 150, sodium: 50, magnesium: 10, phosphorus: 100,
+        zinc: 1.0, cholesterol: 200
+      }
+    };
+    
+    // 判断食物类别
+    if (foodNameLower.includes('果') || foodNameLower.includes('莓') || 
+        foodNameLower.includes('瓜') || foodNameLower.includes('桃') ||
+        foodNameLower.includes('梨') || foodNameLower.includes('葡萄')) {
+      return categoryMap['水果'];
+    } else if (foodNameLower.includes('菜') || foodNameLower.includes('蔬') ||
+               foodNameLower.includes('豆') || foodNameLower.includes('菇')) {
+      return categoryMap['蔬菜'];
+    } else if (foodNameLower.includes('肉') || foodNameLower.includes('鱼') ||
+               foodNameLower.includes('虾') || foodNameLower.includes('蟹')) {
+      return categoryMap['肉类'];
+    } else if (foodNameLower.includes('饭') || foodNameLower.includes('面') ||
+               foodNameLower.includes('饼') || foodNameLower.includes('包') ||
+               foodNameLower.includes('饺') || foodNameLower.includes('馄')) {
+      return categoryMap['主食'];
+    } else if (foodNameLower.includes('蛋') || foodNameLower.includes('奶') ||
+               foodNameLower.includes('酪') || foodNameLower.includes('酸奶')) {
+      return categoryMap['蛋奶'];
+    }
+    
+    // 默认返回通用营养信息
     return this.getDefaultNutritionInfo();
   }
 

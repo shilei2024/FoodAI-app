@@ -27,8 +27,8 @@ const config = {
     // 请访问 https://ai.baidu.com/ 获取您的API Key和Secret Key
     // 重要：API密钥会暴露在小程序代码中，建议在生产环境使用云函数保护密钥
     // 获取方式：登录百度AI开放平台 -> 控制台 -> 应用列表 -> 创建应用 -> 获取密钥
-    apiKey: '', // TODO: 请在此处配置您的百度AI API Key
-    secretKey: '', // TODO: 请在此处配置您的百度AI Secret Key
+    apiKey: 'Imizh84DfkpAW0k7tRjsL5dr', // TODO: 请在此处配置您的百度AI API Key
+    secretKey: 'Ve8iKMebfNkIOqv95c7zU1KJVbE8Q4J6', // TODO: 请在此处配置您的百度AI Secret Key
     
     // 食物识别接口配置
     recognition: {
@@ -49,7 +49,7 @@ const config = {
   deepseekAI: {
     // 注意：API密钥会暴露在小程序代码中，建议在生产环境使用云函数保护密钥
     // 请访问 https://platform.deepseek.com/ 获取您的API Key
-    apiKey: '', // TODO: 请在此处配置您的Deepseek API Key（推荐使用此AI服务）
+    apiKey: 'sk-7ed2df5e71404fdeae65861e06ed81ad', // TODO: 请在此处配置您的Deepseek API Key（推荐使用此AI服务）
     baseURL: 'https://api.deepseek.com/v1',
     
     // 模型配置
@@ -189,7 +189,19 @@ const config = {
       requireVip: false, // 免费用户每日限制次数
       dailyLimit: 10, // 每日免费次数
       vipDailyLimit: 100, // VIP每日次数
-      useSecureMode: false // 使用直接调用模式（解决手机预览问题）
+      useSecureMode: true, // 使用直接调用模式（解决手机预览问题）
+      // 运行模式配置
+      mode: 'direct', // auto: 自动判断, direct: 直接调用, secure: 云函数安全模式
+      // 开发环境配置
+      development: {
+        useDirectMode: true, // 开发环境使用直接调用
+        requireDomainConfig: true // 需要配置服务器域名
+      },
+      // 生产环境配置
+      production: {
+        useSecureMode: true, // 生产环境使用云函数
+        requireDomainConfig: false // 不需要配置服务器域名
+      }
     },
     
     // 营养分析功能

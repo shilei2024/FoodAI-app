@@ -477,7 +477,8 @@ class SecureAIService {
     }
     
     if (!matchedFood) {
-      matchedFood = defaultFoods['苹果'] // 默认返回苹果
+      // 根据输入内容智能选择默认食物
+      matchedFood = this.selectDefaultFoodByInput(input)
     }
     
     return {
@@ -528,6 +529,135 @@ class SecureAIService {
     }
   }
   
+  /**
+   * 根据输入内容智能选择默认食物
+   * @param {string} input 输入内容
+   * @returns {Object} 默认食物数据
+   */
+  selectDefaultFoodByInput(input) {
+    const defaultFoods = {
+      '苹果': {
+        foodName: '苹果',
+        confidence: 0.9,
+        description: '新鲜苹果，富含维生素和纤维',
+        calorie: 52,
+        nutrition: {
+          protein: 0.3,
+          fat: 0.2,
+          carbohydrate: 14,
+          fiber: 2.4,
+          vitamin: 4.6,
+          mineral: 0.2,
+          calcium: 6,
+          iron: 0.1,
+          zinc: 0.1
+        },
+        healthScore: 85,
+        suggestions: ['适合作为健康零食', '建议连皮食用以获取更多纤维'],
+        tags: ['水果', '健康', '低热量']
+      },
+      '香蕉': {
+        foodName: '香蕉',
+        confidence: 0.9,
+        description: '成熟香蕉，富含钾和维生素B6',
+        calorie: 89,
+        nutrition: {
+          protein: 1.1,
+          fat: 0.3,
+          carbohydrate: 23,
+          fiber: 2.6,
+          vitamin: 8.7,
+          mineral: 0.3,
+          calcium: 5,
+          iron: 0.3,
+          zinc: 0.2
+        },
+        healthScore: 80,
+        suggestions: ['适合运动后补充能量', '成熟香蕉更易消化'],
+        tags: ['水果', '能量', '钾']
+      },
+      '米饭': {
+        foodName: '米饭',
+        confidence: 0.9,
+        description: '白米饭，主要提供碳水化合物',
+        calorie: 130,
+        nutrition: {
+          protein: 2.6,
+          fat: 0.3,
+          carbohydrate: 28.6,
+          fiber: 0.4,
+          vitamin: 0,
+          mineral: 0.2,
+          calcium: 10,
+          iron: 0.2,
+          zinc: 0.5
+        },
+        healthScore: 70,
+        suggestions: ['建议搭配蔬菜和蛋白质食物', '控制摄入量以维持健康体重'],
+        tags: ['主食', '碳水', '能量']
+      },
+      '鸡蛋': {
+        foodName: '鸡蛋',
+        confidence: 0.9,
+        description: '鸡蛋，优质蛋白质来源',
+        calorie: 155,
+        nutrition: {
+          protein: 12.6,
+          fat: 9.5,
+          carbohydrate: 1.1,
+          fiber: 0,
+          vitamin: 140,
+          mineral: 1.8,
+          calcium: 56,
+          iron: 1.8,
+          zinc: 1.3
+        },
+        healthScore: 75,
+        suggestions: ['建议每天食用1-2个', '煮熟食用更安全'],
+        tags: ['蛋白质', '营养', '早餐']
+      }
+    }
+    
+    // 根据输入内容的关键词选择最合适的默认食物
+    const inputLower = input.toLowerCase()
+    
+    // 关键词匹配
+    const keywordMapping = {
+      '水果': '苹果',
+      '苹果': '苹果',
+      '香蕉': '香蕉',
+      '主食': '米饭',
+      '米饭': '米饭',
+      '面食': '米饭',
+      '蛋白质': '鸡蛋',
+      '鸡蛋': '鸡蛋',
+      '肉类': '鸡蛋',
+      '鸡肉': '鸡蛋',
+      '牛肉': '鸡蛋',
+      '蔬菜': '苹果', // 蔬菜类默认返回苹果（作为水果代表）
+      '沙拉': '苹果'
+    }
+    
+    // 检查输入中是否包含关键词
+    for (const [keyword, foodName] of Object.entries(keywordMapping)) {
+      if (inputLower.includes(keyword.toLowerCase())) {
+        return defaultFoods[foodName] || defaultFoods['苹果']
+      }
+    }
+    
+    // 如果没有匹配到关键词，根据输入长度和内容判断
+    if (inputLower.includes('肉') || inputLower.includes('鱼') || inputLower.includes('虾')) {
+      return defaultFoods['鸡蛋'] // 蛋白质类食物
+    } else if (inputLower.includes('饭') || inputLower.includes('面') || inputLower.includes('饼')) {
+      return defaultFoods['米饭'] // 主食类
+    } else if (inputLower.includes('果') || inputLower.includes('莓') || inputLower.includes('瓜')) {
+      return defaultFoods['苹果'] // 水果类
+    } else {
+      // 默认返回米饭，因为这是最常见的食物
+      return defaultFoods['米饭']
+    }
+  }
+
   /**
    * 备用方案：获取图片base64
    * @param {string} imagePath 图片路径
